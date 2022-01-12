@@ -1,0 +1,5 @@
+<resources>
+    <string name="DISCONNECTED">DISCONNECTED</string>
+    <string name="CONNECTED">CONNECTED</string>
+
+</resources>

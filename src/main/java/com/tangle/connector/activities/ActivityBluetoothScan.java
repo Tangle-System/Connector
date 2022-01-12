@@ -1,0 +1,370 @@
+package com.tangle.connector.activities;
+
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Parcelable;
+import android.transition.TransitionManager;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.airbnb.lottie.LottieAnimationView;
+import com.airbnb.lottie.LottieDrawable;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.tangle.connector.R;
+import com.tangle.connector.TangleParameters;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+
+public class ActivityBluetoothScan extends AppCompatActivity {
+
+    private static final String TAG = ActivityBluetoothScan.class.getName();
+    private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
+    private static final int MANUFACTURE_ID = 0x02e5;
+    private static long SCAN_PERIOD = 5000;
+
+    private ListView mListView;
+    private TextView mTextView;
+    private TextView informationText;
+    private Button buttonScanAgain;
+    private Button buttonMyApps;
+    private ImageView imageViewBleScanCorrect;
+    private LottieAnimationView getImageViewBleScanMain;
+    private ConstraintLayout layoutBleScan;
+
+    private BluetoothLeScanner bluetoothLeScanner;
+    private ScanSettings.Builder settingsBuilder;
+    private ArrayList<ScanFilter> filters;
+    private TangleParameters tangleParameters;
+    private PairedDeviceAdapter mAdapter;
+    private final ArrayList<ScanResult> pairedDeviceList = new ArrayList<>();
+    private final Handler handler = new Handler();
+
+    private boolean scanning;
+    private boolean selected = false;
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_bluetooth_scan);
+
+        mListView = findViewById(R.id.deviceList);
+        mTextView = findViewById(R.id.textView3);
+        informationText = findViewById(R.id.informationText);
+        buttonScanAgain = findViewById(R.id.buttonScanAgain);
+        buttonMyApps = findViewById(R.id.button_my_apps);
+        imageViewBleScanCorrect = findViewById(R.id.imageView_ble_scan_correct);
+        getImageViewBleScanMain = findViewById(R.id.imageView_ble_scan_mainImage);
+        layoutBleScan = findViewById(R.id.layout_ble_scan);
+
+        bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().getBluetoothLeScanner();
+
+        mAdapter = new PairedDeviceAdapter(getApplicationContext(), R.layout.item_device, R.id.deviceName, pairedDeviceList);
+        mListView.setAdapter(mAdapter);
+
+        setFilter();
+        scanLeDevice();
+    }
+
+    private void setFilter() {
+        settingsBuilder = new ScanSettings.Builder();
+        settingsBuilder.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
+
+        Intent intent = getIntent();
+        String criteriaJson = intent.getStringExtra("manufactureDataCriteria");
+        SCAN_PERIOD = intent.getIntExtra("timeout", 5000);
+        Gson gson = new Gson();
+        Type type1 = new TypeToken<TangleParameters[]>() {
+        }.getType();
+        TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
+
+        filters = new ArrayList<>();
+
+        try {
+            for (TangleParameters criterion : criteria) {
+                ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
+                        .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
+                if (!criterion.getName().equals(""))
+                    scanFilterBuilder.setDeviceName(criterion.getName());
+
+                filters.add(scanFilterBuilder.build());
+            }
+        } catch (IOException e) {
+            Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
+        }
+    }
+
+    private void scanLeDevice() {
+        // Device scan callback.
+        ScanCallback leScanCallback = new ScanCallback() {
+            @Override
+            public void onScanResult(int callbackType, ScanResult result) {
+                super.onScanResult(callbackType, result);
+                boolean isSame = false;
+                Log.d(TAG, "CallBack result: " + result);
+                Log.d(TAG, "onScanResult: " + result.getRssi() + " dB");
+
+                if (mAdapter.getCount() != 0) {
+                    for (int i = 0; i < mAdapter.getCount(); i++) {
+                        if (mAdapter.getItem(i).getDevice().getAddress().equals(result.getDevice().getAddress())) {
+                            mAdapter.set(i, result);
+                            mAdapter.notifyDataSetChanged();
+                            isSame = true;
+                        }
+                    }
+                }
+                if (!isSame) {
+                    mAdapter.add(result);
+                    mAdapter.notifyDataSetChanged();
+                }
+            }
+        };
+//        this.requestPermissions(new String[]{
+//                Manifest.permission.ACCESS_FINE_LOCATION,
+//                Manifest.permission.BLUETOOTH_SCAN
+//        }, PERMISSION_REQUEST_FINE_LOCATION);
+
+        if (!scanning) {
+            // Stops scanning after a pre-defined scan period.
+            handler.postDelayed(() -> {
+                scanning = false;
+                bluetoothLeScanner.stopScan(leScanCallback);
+
+                isTangleAvailable();
+
+            }, SCAN_PERIOD);
+
+            scanning = true;
+            Log.d(TAG, "Start scanning.");
+            bluetoothLeScanner.startScan(filters, settingsBuilder.build(), leScanCallback);
+
+        } else {
+            scanning = false;
+            Log.d(TAG, "Stop scanning.");
+            bluetoothLeScanner.stopScan(leScanCallback);
+        }
+
+        pairDevice(leScanCallback);
+    }
+
+    private void pairDevice(ScanCallback leScanCallback) {
+        mListView.setOnItemClickListener((parent, view, position, id) -> {
+            bluetoothLeScanner.stopScan(leScanCallback);
+
+            ScanResult device = mAdapter.getItem(position);
+
+            //Set name
+            TangleParameters selectedTangleParameters = new TangleParameters();
+            selectedTangleParameters.setName(device.getScanRecord().getDeviceName());
+
+            //Get manufactureData
+            selectedTangleParameters.parseManufactureData(device.getScanRecord().getManufacturerSpecificData(MANUFACTURE_ID));
+
+            //Send intend and finis
+            Intent intent = new Intent(getApplicationContext(), ActivityControl.class);
+            intent.putExtra("macAddress", device.getDevice().getAddress().toString());
+            intent.putExtra("tangleParameters", (Parcelable) selectedTangleParameters);
+            intent.setAction(ActivityControl.USER_SELECT_RESOLVE);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+            selected = true;
+            finish();
+
+/*            TransitionManager.beginDelayedTransition(layoutBleScan);
+            mTextView.setText("Zařízení xxxx bylo spárováno!");
+            getImageViewBleScanMain.setAnimation(R.raw.ble_found_animation);
+            getImageViewBleScanMain.setRepeatCount(0);
+            getImageViewBleScanMain.playAnimation();
+            mListView.setVisibility(View.INVISIBLE);
+            mListView.setClickable(false);
+            informationText.setVisibility(View.VISIBLE);
+            buttonScanAgain.setText("Spárovat nové");
+            buttonScanAgain.setVisibility(View.VISIBLE);
+            buttonMyApps.setVisibility(View.VISIBLE);*/
+        });
+    }
+
+//  Momentálně nepotřebujeme nepoužíváme metodu párování zařízení
+    private void isTangleAvailable() {
+        TransitionManager.beginDelayedTransition(layoutBleScan);
+        if (mAdapter.myList.isEmpty()) {
+            mTextView.setText("Vypadá to, že žádné zařízení není v dosahu");
+            getImageViewBleScanMain.setAnimation(R.raw.ble_unavailable_animation);
+            getImageViewBleScanMain.setRepeatCount(0);
+            getImageViewBleScanMain.playAnimation();
+            informationText.setVisibility(View.VISIBLE);
+            buttonScanAgain.setText("Zkusit to znovu");
+            buttonScanAgain.setVisibility(View.VISIBLE);
+            buttonMyApps.setVisibility(View.VISIBLE);
+
+            setButtons();
+
+        } else {
+            mTextView.setVisibility(View.INVISIBLE);
+            mTextView.setText("K dispozici jsou následující zařízení:");
+            imageViewBleScanCorrect.setVisibility(View.VISIBLE);
+            mTextView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void setButtons() {
+        buttonScanAgain.setOnClickListener(v -> {
+            scanLeDevice();
+            TransitionManager.beginDelayedTransition(layoutBleScan);
+            mTextView.setText("Hledáme doostupnán zařízení...");
+            getImageViewBleScanMain.setAnimation(R.raw.ble_scan_animation);
+            getImageViewBleScanMain.setRepeatCount(LottieDrawable.INFINITE);
+            getImageViewBleScanMain.playAnimation();
+            informationText.setVisibility(View.GONE);
+            buttonScanAgain.setVisibility(View.GONE);
+            buttonMyApps.setVisibility(View.GONE);
+            mListView.setVisibility(View.VISIBLE);
+            mListView.setClickable(true);
+        });
+
+//        buttonMyApps.setOnClickListener(v -> {
+//            Intent intent = new Intent(getApplicationContext(), ActivityMyApps.class);
+//            startActivity(intent);
+//            finish();
+//        });
+    }
+
+    public static class PairedDeviceAdapter extends ArrayAdapter<ScanResult> {
+
+        private final Context context;
+        private final ArrayList<ScanResult> myList;
+
+        public PairedDeviceAdapter(Context context, int resource, int textViewResourceId, ArrayList<ScanResult> objects) {
+            super(context, resource, textViewResourceId, objects);
+            this.context = context;
+            myList = objects;
+        }
+
+        @Override
+        public int getCount() {
+            return myList.size();
+        }
+
+        @Override
+        public ScanResult getItem(int position) {
+            return myList.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            View v = convertView;
+            PairedDeviceAdapter.ViewHolder holder;
+            if (convertView == null) {
+                v = LayoutInflater.from(context).inflate(R.layout.item_device, null);
+                holder = new ViewHolder();
+
+                holder.name = v.findViewById(R.id.deviceName);
+                holder.signalStrength = v.findViewById(R.id.deviceSignalStrength);
+
+                v.setTag(holder);
+            } else {
+                holder = (PairedDeviceAdapter.ViewHolder) v.getTag();
+            }
+
+            ScanResult result = myList.get(position);
+            holder.name.setText(result.getDevice().getName());
+
+            signalStrengthSet(holder, result);
+
+            return v;
+        }
+
+        private void signalStrengthSet(ViewHolder holder, ScanResult result) {
+            int signalStrength = result.getRssi();
+            if (signalStrength > -50) {
+                holder.signalStrength.setImageResource(R.drawable.ic_bluetooth_signal_bar_4);
+            } else if (signalStrength > -65) {
+                holder.signalStrength.setImageResource(R.drawable.ic_bluetooth_signal_bar_3);
+            } else if (signalStrength > -80) {
+                holder.signalStrength.setImageResource(R.drawable.ic_bluetooth_signal_bar_2);
+            } else {
+                holder.signalStrength.setImageResource(R.drawable.ic_bluetooth_signal_bar_1);
+            }
+        }
+
+        public void set(int i, ScanResult result) {
+            myList.set(i, result);
+        }
+
+        private static class ViewHolder {
+            TextView name;
+            ImageView signalStrength;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(getApplicationContext(), ActivityControl.class);
+        intent.setAction(ActivityControl.USER_SELECT_CANCELED_SELECTION);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        super.onBackPressed();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!scanning) {
+            scanLeDevice();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (scanning) {
+            scanLeDevice();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (scanning) {
+            scanLeDevice();
+        }
+        if (!selected) {
+            Intent intent = new Intent(getApplicationContext(), ActivityControl.class);
+            intent.setAction(ActivityControl.USER_SELECT_CANCELED_SELECTION);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+            finish();
+        }
+        super.onDestroy();
+    }
+}
