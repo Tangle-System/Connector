@@ -73,6 +73,7 @@ public class ActivityControl extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // load online by default
+
         webView.setWebContentsDebuggingEnabled(true); // pouze pro debugovani
         webView.addJavascriptInterface(new JavascriptHandler(this), "tangleConnect");
 

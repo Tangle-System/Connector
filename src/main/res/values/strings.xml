@@ -1,11 +1,9 @@
 <resources>
-    <string name="app_name">TangleConnect</string>
-    <string name="welcome">Vítejte v aplikaci\nTangle Connect</string>
-    <string name="app_information">Tato aplikace slouží k propojení Tangle zařízení s jejich rozhraním pro ovládání. Začněte tím, že svá zařízení sprárujete za pomoci Bluetooth.</string>
-    <string name="my_apps">Moje aplikace</string>
-    <string name="pair_new_device">Spárovat nové</string>
-    <string name="no_paired_devices">Zatím nemáte spárované žádné zařízení...</string>
-    <string name="try_pair_devices">Zkuste spárovat své  zařízení stisknutím “Spárovat nové”. Ujistěte se, že je zařízení napájené a váš telefon má zapnuté Bluetooth.</string>
-    <string name="what_is_tangle">Co je Tangle?</string>
-    <string name="help">help</string>
+    <string name="app_name" translatable="false">TangleConnect</string>
+    <string name="information_text">At the moment, you will find our microcontrollers in lamps, safety elements in factories or training lights for athletes.</string>
+    <string name="scan_again">Tray again</string>
+    <string name="back">Back</string>
+    <string name="available_devices">Available devices:</string>
+    <string name="looking_for_devices">Looking for devices...</string>
+    <string name="no_device_in_range">Loolks like no device is in range</string>
 </resources>

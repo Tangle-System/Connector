@@ -211,7 +211,7 @@ public class ActivityUserSelect extends AppCompatActivity {
     private void isTangleAvailable() {
         TransitionManager.beginDelayedTransition(layoutBleScan);
         if (mAdapter.myList.isEmpty()) {
-            mTextView.setText("Vypadá to, že žádné zařízení není v dosahu");
+            mTextView.setText(R.string.no_device_in_range);
             getImageViewBleScanMain.setAnimation(R.raw.ble_unavailable_animation);
             getImageViewBleScanMain.setRepeatCount(0);
             getImageViewBleScanMain.playAnimation();
@@ -221,7 +221,7 @@ public class ActivityUserSelect extends AppCompatActivity {
 
         } else {
             mTextView.setVisibility(View.INVISIBLE);
-            mTextView.setText("K dispozici jsou následující zařízení:");
+            mTextView.setText(R.string.available_devices);
             imageViewBleScanCorrect.setVisibility(View.VISIBLE);
             getImageViewBleScanMain.setAnimation(R.raw.ble_found_animation);
             getImageViewBleScanMain.setRepeatCount(0);
@@ -238,7 +238,7 @@ public class ActivityUserSelect extends AppCompatActivity {
         buttonScanAgain.setOnClickListener(v -> {
             scanLeDevice();
             TransitionManager.beginDelayedTransition(layoutBleScan);
-            mTextView.setText("Hledáme doostupnán zařízení...");
+            mTextView.setText(R.string.looking_for_devices);
             getImageViewBleScanMain.setAnimation(R.raw.ble_scan_animation);
             getImageViewBleScanMain.setRepeatCount(LottieDrawable.INFINITE);
             getImageViewBleScanMain.playAnimation();

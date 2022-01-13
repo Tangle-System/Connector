@@ -31,7 +31,7 @@
         android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@+id/text_process"
         app:layout_constraintEnd_toEndOf="@+id/text_process"
-        app:layout_constraintStart_toStartOf="@+id/text_process" />
+        app:layout_constraintStart_toStartOf="@+id/text_process"/>
 
     <TextView
         android:id="@+id/text_process"
@@ -40,7 +40,7 @@
         android:layout_marginStart="51dp"
         android:layout_marginEnd="51dp"
         android:layout_marginBottom="32dp"
-        android:text="Hledáme doostupná zařízení..."
+        android:text="@string/looking_for_devices"
         android:textAlignment="center"
         android:textColor="?colorOnPrimary"
         android:textSize="25sp"
@@ -56,7 +56,7 @@
         android:layout_marginStart="32dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="32dp"
-        android:text="At the moment, you will find our microcontrollers in lamps, safety elements in factories or training lights for athletes."
+        android:text="@string/information_text"
         android:textAlignment="center"
         android:textColor="?colorOnPrimary"
         android:textSize="16sp"
@@ -77,7 +77,7 @@
         android:fontFamily="@font/noway_regular"
         android:insetTop="0dp"
         android:insetBottom="0dp"
-        android:text="Zkusit to znovu"
+        android:text="@string/scan_again"
         android:textAllCaps="false"
         android:visibility="gone"
         app:cornerRadius="20dp"
@@ -96,7 +96,7 @@
         android:fontFamily="@font/noway_regular"
         android:insetTop="0dp"
         android:insetBottom="0dp"
-        android:text="Zpět"
+        android:text="@string/back"
         android:textAllCaps="false"
         android:visibility="visible"
         app:cornerRadius="20dp"

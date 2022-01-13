@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scan_again">Zkusit to znovu</string>
+    <string name="back">Zpět</string>
+    <string name="no_device_in_range">Vypadá to, že žádné zařízení není v dosahu</string>
+    <string name="available_devices">K dispozici jsou následující zařízení:</string>
+    <string name="looking_for_devices">Hledáme doostupnán zařízení...</string>
+    <string name="information_text">V tento moment můžete najít naše mikrokontrolelry v lampách bezpečnostních prvcích nebo ve světlech na trénování atletů.</string>
+</resources>
