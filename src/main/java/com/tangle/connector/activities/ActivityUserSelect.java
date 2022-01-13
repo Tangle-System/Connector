@@ -41,9 +41,9 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 
-public class ActivityBluetoothScan extends AppCompatActivity {
+public class ActivityUserSelect extends AppCompatActivity {
 
-    private static final String TAG = ActivityBluetoothScan.class.getName();
+    private static final String TAG = ActivityUserSelect.class.getName();
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private static final int MANUFACTURE_ID = 0x02e5;
     private static long SCAN_PERIOD = 5000;
@@ -51,8 +51,8 @@ public class ActivityBluetoothScan extends AppCompatActivity {
     private ListView mListView;
     private TextView mTextView;
     private TextView informationText;
+    private Button buttonBack;
     private Button buttonScanAgain;
-    private Button buttonMyApps;
     private ImageView imageViewBleScanCorrect;
     private LottieAnimationView getImageViewBleScanMain;
     private ConstraintLayout layoutBleScan;
@@ -72,13 +72,13 @@ public class ActivityBluetoothScan extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_bluetooth_scan);
+        setContentView(R.layout.activity_user_select);
 
-        mListView = findViewById(R.id.deviceList);
-        mTextView = findViewById(R.id.textView3);
+        mListView = findViewById(R.id.list_view_devices);
+        mTextView = findViewById(R.id.text_process);
         informationText = findViewById(R.id.informationText);
-        buttonScanAgain = findViewById(R.id.buttonScanAgain);
-        buttonMyApps = findViewById(R.id.button_my_apps);
+        buttonBack = findViewById(R.id.button_back);
+        buttonScanAgain = findViewById(R.id.button_scan_again);
         imageViewBleScanCorrect = findViewById(R.id.imageView_ble_scan_correct);
         getImageViewBleScanMain = findViewById(R.id.imageView_ble_scan_mainImage);
         layoutBleScan = findViewById(R.id.layout_ble_scan);
@@ -87,6 +87,8 @@ public class ActivityBluetoothScan extends AppCompatActivity {
 
         mAdapter = new PairedDeviceAdapter(getApplicationContext(), R.layout.item_device, R.id.deviceName, pairedDeviceList);
         mListView.setAdapter(mAdapter);
+
+        setButtons();
 
         setFilter();
         scanLeDevice();
@@ -145,10 +147,6 @@ public class ActivityBluetoothScan extends AppCompatActivity {
                 }
             }
         };
-//        this.requestPermissions(new String[]{
-//                Manifest.permission.ACCESS_FINE_LOCATION,
-//                Manifest.permission.BLUETOOTH_SCAN
-//        }, PERMISSION_REQUEST_FINE_LOCATION);
 
         if (!scanning) {
             // Stops scanning after a pre-defined scan period.
@@ -210,7 +208,6 @@ public class ActivityBluetoothScan extends AppCompatActivity {
         });
     }
 
-//  Momentálně nepotřebujeme nepoužíváme metodu párování zařízení
     private void isTangleAvailable() {
         TransitionManager.beginDelayedTransition(layoutBleScan);
         if (mAdapter.myList.isEmpty()) {
@@ -219,21 +216,25 @@ public class ActivityBluetoothScan extends AppCompatActivity {
             getImageViewBleScanMain.setRepeatCount(0);
             getImageViewBleScanMain.playAnimation();
             informationText.setVisibility(View.VISIBLE);
-            buttonScanAgain.setText("Zkusit to znovu");
+            buttonBack.setVisibility(View.VISIBLE);
             buttonScanAgain.setVisibility(View.VISIBLE);
-            buttonMyApps.setVisibility(View.VISIBLE);
-
-            setButtons();
 
         } else {
             mTextView.setVisibility(View.INVISIBLE);
             mTextView.setText("K dispozici jsou následující zařízení:");
             imageViewBleScanCorrect.setVisibility(View.VISIBLE);
+            getImageViewBleScanMain.setAnimation(R.raw.ble_found_animation);
+            getImageViewBleScanMain.setRepeatCount(0);
+            getImageViewBleScanMain.playAnimation();
             mTextView.setVisibility(View.VISIBLE);
         }
     }
 
     private void setButtons() {
+        buttonBack.setOnClickListener(v -> {
+            finish();
+        });
+
         buttonScanAgain.setOnClickListener(v -> {
             scanLeDevice();
             TransitionManager.beginDelayedTransition(layoutBleScan);
@@ -243,16 +244,10 @@ public class ActivityBluetoothScan extends AppCompatActivity {
             getImageViewBleScanMain.playAnimation();
             informationText.setVisibility(View.GONE);
             buttonScanAgain.setVisibility(View.GONE);
-            buttonMyApps.setVisibility(View.GONE);
             mListView.setVisibility(View.VISIBLE);
             mListView.setClickable(true);
         });
 
-//        buttonMyApps.setOnClickListener(v -> {
-//            Intent intent = new Intent(getApplicationContext(), ActivityMyApps.class);
-//            startActivity(intent);
-//            finish();
-//        });
     }
 
     public static class PairedDeviceAdapter extends ArrayAdapter<ScanResult> {

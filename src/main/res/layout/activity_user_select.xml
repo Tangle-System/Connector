@@ -14,13 +14,13 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:scaleType="centerCrop"
-        app:layout_constraintBottom_toTopOf="@+id/textView3"
+        app:layout_constraintBottom_toTopOf="@+id/text_process"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:lottie_autoPlay="true"
         app:lottie_loop="true"
-        app:lottie_rawRes="@raw/ble_scan_animation"/>
+        app:lottie_rawRes="@raw/ble_scan_animation" />
 
     <ImageView
         android:id="@+id/imageView_ble_scan_correct"
@@ -29,12 +29,12 @@
         android:layout_marginBottom="13dp"
         android:src="@drawable/ic_correct"
         android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/textView3"
-        app:layout_constraintEnd_toEndOf="@+id/textView3"
-        app:layout_constraintStart_toStartOf="@+id/textView3" />
+        app:layout_constraintBottom_toTopOf="@+id/text_process"
+        app:layout_constraintEnd_toEndOf="@+id/text_process"
+        app:layout_constraintStart_toStartOf="@+id/text_process" />
 
     <TextView
-        android:id="@+id/textView3"
+        android:id="@+id/text_process"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="51dp"
@@ -45,7 +45,7 @@
         android:textColor="?colorOnPrimary"
         android:textSize="25sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/deviceList"
+        app:layout_constraintBottom_toTopOf="@+id/list_view_devices"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -64,12 +64,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView3" />
+        app:layout_constraintTop_toBottomOf="@+id/text_process" />
 
     <Button
-        android:id="@+id/button_my_apps"
+        android:id="@+id/button_scan_again"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="55dp"
         android:layout_marginStart="25dp"
         android:layout_marginEnd="25dp"
         android:layout_marginBottom="17dp"
@@ -77,43 +77,47 @@
         android:fontFamily="@font/noway_regular"
         android:insetTop="0dp"
         android:insetBottom="0dp"
-        android:text="@string/my_apps"
+        android:text="Zkusit to znovu"
         android:textAllCaps="false"
         android:visibility="gone"
         app:cornerRadius="20dp"
-        app:layout_constraintBottom_toTopOf="@+id/buttonScanAgain"
+        app:layout_constraintBottom_toTopOf="@+id/button_back"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/buttonScanAgain"
+        android:id="@+id/button_back"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="55dp"
         android:layout_marginStart="25dp"
         android:layout_marginEnd="25dp"
-        android:layout_marginBottom="52dp"
+        android:layout_marginBottom="50dp"
         android:backgroundTint="?colorSecondary"
         android:fontFamily="@font/noway_regular"
         android:insetTop="0dp"
         android:insetBottom="0dp"
-        android:text="@string/pair_new_device"
+        android:text="Zpět"
         android:textAllCaps="false"
-        android:visibility="gone"
+        android:visibility="visible"
         app:cornerRadius="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+
     <ListView
-        android:id="@+id/deviceList"
+        android:id="@+id/list_view_devices"
         android:layout_width="0dp"
-        android:layout_height="236dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="32dp"
-        android:divider="@null"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_height="126dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginEnd="25dp"
+        android:layout_marginBottom="16dp"
+        android:divider="?colorPrimary"
+        android:dividerHeight="16dp"
+        android:padding="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/button_back"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        tools:listitem="@layout/item_device" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -20,7 +20,6 @@ import android.webkit.WebViewClient;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.tangle.connector.BleScanner;
 import com.tangle.connector.Functions;
 import com.tangle.connector.R;
 import com.tangle.connector.TangleAndroidConnector;
@@ -320,7 +319,7 @@ public class ActivityControl extends AppCompatActivity {
             Log.d(TAG, "userSelect: " + criteria);
 
             if (criteria != null) {
-                Intent intent = new Intent(getApplicationContext(), ActivityBluetoothScan.class);
+                Intent intent = new Intent(getApplicationContext(), ActivityUserSelect.class);
                 intent.putExtra("manufactureDataCriteria", criteria);
                 startActivity(intent);
             } else {
@@ -333,7 +332,7 @@ public class ActivityControl extends AppCompatActivity {
             Log.d(TAG, "userSelect: " + criteria);
 
             if (criteria != null) {
-                Intent intent = new Intent(getApplicationContext(), ActivityBluetoothScan.class);
+                Intent intent = new Intent(getApplicationContext(), ActivityUserSelect.class);
                 intent.putExtra("manufactureDataCriteria", criteria);
                 intent.putExtra("timeout", timeout);
                 startActivity(intent);
@@ -345,33 +344,34 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void autoSelect(String criteria, int scan_period, int timeout) {
             Log.d(TAG, "autoSelect: " + criteria);
-            found = false;
-            autoSelectStopped = false;
-
-            BleScanner bleScanner = new BleScanner();
-            bleScanner.scanLeDevice(criteria, scan_period);
-            new Thread(() -> {
-                try {
-                    Log.d(TAG, "autoSelect: Thread: sleep: " + timeout);
-                    Thread.sleep(timeout);
-                    Log.d(TAG, "autoSelect: Thread: weak: ");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if (!found) {
-                    autoSelectResolve(bleScanner.stopScan());
-                    autoSelectStopped = true;
-                }
-            }).start();
-
-            bleScanner.nearestDeviceListener(nearestDevice -> {
-                if (nearestDevice == null && !autoSelectStopped) {
-                    bleScanner.scanLeDevice(criteria, scan_period);
-                } else if (!autoSelectStopped) {
-                    autoSelectResolve(nearestDevice);
-                    found = true;
-                }
-            });
+            userSelect(criteria);
+//            found = false;
+//            autoSelectStopped = false;
+//
+//            BleScanner bleScanner = new BleScanner();
+//            bleScanner.scanLeDevice(criteria, scan_period);
+//            new Thread(() -> {
+//                try {
+//                    Log.d(TAG, "autoSelect: Thread: sleep: " + timeout);
+//                    Thread.sleep(timeout);
+//                    Log.d(TAG, "autoSelect: Thread: weak: ");
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                if (!found) {
+//                    autoSelectResolve(bleScanner.stopScan());
+//                    autoSelectStopped = true;
+//                }
+//            }).start();
+//
+//            bleScanner.nearestDeviceListener(nearestDevice -> {
+//                if (nearestDevice == null && !autoSelectStopped) {
+//                    bleScanner.scanLeDevice(criteria, scan_period);
+//                } else if (!autoSelectStopped) {
+//                    autoSelectResolve(nearestDevice);
+//                    found = true;
+//                }
+//            });
 
         }
 
