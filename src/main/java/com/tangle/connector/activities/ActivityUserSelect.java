@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.os.Parcelable;
 import android.transition.TransitionManager;
 import android.util.Log;
@@ -35,6 +36,7 @@ import com.airbnb.lottie.LottieDrawable;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.tangle.connector.R;
+import com.tangle.connector.TangleAndroidConnector;
 import com.tangle.connector.TangleParameters;
 
 import java.io.IOException;
@@ -97,28 +99,35 @@ public class ActivityUserSelect extends AppCompatActivity {
     private void setFilter() {
         settingsBuilder = new ScanSettings.Builder();
         settingsBuilder.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
+        filters = new ArrayList<>();
 
         Intent intent = getIntent();
         String criteriaJson = intent.getStringExtra("manufactureDataCriteria");
         SCAN_PERIOD = intent.getIntExtra("timeout", 5000);
-        Gson gson = new Gson();
-        Type type1 = new TypeToken<TangleParameters[]>() {
-        }.getType();
-        TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
 
-        filters = new ArrayList<>();
+        if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
+            ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
+                    .setServiceUuid(new ParcelUuid(TangleAndroidConnector.TRANSMITTER_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
 
-        try {
-            for (TangleParameters criterion : criteria) {
-                ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
-                        .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
-                if (!criterion.getName().equals(""))
-                    scanFilterBuilder.setDeviceName(criterion.getName());
+            filters.add(scanFilterBuilder.build());
+        } else {
+            Gson gson = new Gson();
+            Type type1 = new TypeToken<TangleParameters[]>() {
+            }.getType();
+            TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
 
-                filters.add(scanFilterBuilder.build());
+            try {
+                for (TangleParameters criterion : criteria) {
+                    ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
+                            .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
+                    if (!criterion.getName().equals("")) {
+                        scanFilterBuilder.setDeviceName(criterion.getName());
+                    }
+                    filters.add(scanFilterBuilder.build());
+                }
+            } catch (IOException e) {
+                Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
             }
-        } catch (IOException e) {
-            Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
         }
     }
 

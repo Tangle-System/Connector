@@ -7,6 +7,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -37,25 +38,31 @@ public class BleScanner {
     private void setFilter(String criteriaJson) {
         settingsBuilder = new ScanSettings.Builder();
         settingsBuilder.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
-
-        Gson gson = new Gson();
-        Type type1 = new TypeToken<TangleParameters[]>() {
-        }.getType();
-        TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
-
         filters = new ArrayList<>();
 
-        try {
-            for (TangleParameters criterion : criteria) {
-                ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
-                        .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
-                if (!criterion.getName().equals(""))
-                    scanFilterBuilder.setDeviceName(criterion.getName());
+        if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
+            ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TRANSMITTER_SERVICE_UUID));
+            filters.add(scanFilterBuilder.build());
+        } else {
+            Gson gson = new Gson();
+            Type type1 = new TypeToken<TangleParameters[]>() {
+            }.getType();
+            TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
 
-                filters.add(scanFilterBuilder.build());
+
+            try {
+                for (TangleParameters criterion : criteria) {
+                    ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
+                            .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
+                    if (!criterion.getName().equals("")) {
+                        scanFilterBuilder.setDeviceName(criterion.getName());
+                    }
+                    filters.add(scanFilterBuilder.build());
+                }
+            } catch (IOException e) {
+                Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
             }
-        } catch (IOException e) {
-            Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
         }
     }
 

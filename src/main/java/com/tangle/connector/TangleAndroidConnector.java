@@ -63,7 +63,7 @@ public class TangleAndroidConnector extends Service {
     private int writtenUpdate;
     private float updateProgress;
 
-    private final UUID TRANSMITTER_SERVICE_UUID = UUID.fromString("cc540e31-80be-44af-b64a-5d2def886bf5");
+    public static final UUID TRANSMITTER_SERVICE_UUID = UUID.fromString("cc540e31-80be-44af-b64a-5d2def886bf5");
     private final UUID TERMINAL_CHAR_UUID = UUID.fromString("33a0937e-0c61-41ea-b770-007ade2c79fa");
     private final UUID CLOCK_CHAR_UUID = UUID.fromString("7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19");
     private final UUID DEVICE_CHAR_UUID = UUID.fromString("9ebe2e4b-10c7-4a81-ac83-49540d1135a5");
