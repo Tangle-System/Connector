@@ -1,9 +1,5 @@
 <resources>
     <string name="app_name">TangleConnect</string>
-    <string name="DISCONNECTED">DISCONNECTED</string>
-    <string name="CONNECTING">CONNECTING</string>
-    <string name="CONNECTED">CONNECTED</string>
-    <string name="DISCONNECTING">DISCONNECTING</string>
     <string name="welcome">Vítejte v aplikaci\nTangle Connect</string>
     <string name="app_information">Tato aplikace slouží k propojení Tangle zařízení s jejich rozhraním pro ovládání. Začněte tím, že svá zařízení sprárujete za pomoci Bluetooth.</string>
     <string name="my_apps">Moje aplikace</string>

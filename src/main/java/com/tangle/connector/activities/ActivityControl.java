@@ -20,6 +20,7 @@ import android.webkit.WebViewClient;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
+import com.tangle.connector.BleScanner;
 import com.tangle.connector.Functions;
 import com.tangle.connector.R;
 import com.tangle.connector.TangleAndroidConnector;
@@ -33,7 +34,6 @@ public class ActivityControl extends AppCompatActivity {
     public static final String USER_SELECT_RESOLVE = "userSelect -> resolve(tangleParameters)";
     public static final String COMMUNICATION_REJECT = "Connector reject()";
 
-    private TextView connectStateView;
     private WebView webView;
 
     private TangleAndroidConnector connector;
@@ -56,8 +56,6 @@ public class ActivityControl extends AppCompatActivity {
 
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", "https://blockly.lukaskovar.repl.co");
-
-        connectStateView = findViewById(R.id.connectState);
 
         setWebView();
         setBroadcastReceiver();
@@ -261,7 +259,6 @@ public class ActivityControl extends AppCompatActivity {
                 switch (connectionState) {
                     case TangleAndroidConnector.STATE_DISCONNECTED:
                         Log.d(TAG, "bluetoothService: Disconnected");
-                        connectStateView.setText(R.string.DISCONNECTED);
                         if (connecting) {
                             sendReject("ConnectionFailed");
                             connecting = false;
@@ -275,7 +272,6 @@ public class ActivityControl extends AppCompatActivity {
                         break;
                     case TangleAndroidConnector.STATE_CONNECTED:
                         Log.d(TAG, "bluetoothService: Connected");
-                        connectStateView.setText(R.string.CONNECTED);
                         webView.loadUrl("javascript:window.tangleConnect.emit('#connected');");
                         if (connecting) {
                             connecting = false;
@@ -344,34 +340,33 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void autoSelect(String criteria, int scan_period, int timeout) {
             Log.d(TAG, "autoSelect: " + criteria);
-            userSelect(criteria);
-//            found = false;
-//            autoSelectStopped = false;
-//
-//            BleScanner bleScanner = new BleScanner();
-//            bleScanner.scanLeDevice(criteria, scan_period);
-//            new Thread(() -> {
-//                try {
-//                    Log.d(TAG, "autoSelect: Thread: sleep: " + timeout);
-//                    Thread.sleep(timeout);
-//                    Log.d(TAG, "autoSelect: Thread: weak: ");
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                if (!found) {
-//                    autoSelectResolve(bleScanner.stopScan());
-//                    autoSelectStopped = true;
-//                }
-//            }).start();
-//
-//            bleScanner.nearestDeviceListener(nearestDevice -> {
-//                if (nearestDevice == null && !autoSelectStopped) {
-//                    bleScanner.scanLeDevice(criteria, scan_period);
-//                } else if (!autoSelectStopped) {
-//                    autoSelectResolve(nearestDevice);
-//                    found = true;
-//                }
-//            });
+            found = false;
+            autoSelectStopped = false;
+
+            BleScanner bleScanner = new BleScanner();
+            bleScanner.scanLeDevice(criteria, scan_period);
+            new Thread(() -> {
+                try {
+                    Log.d(TAG, "autoSelect: Thread: sleep: " + timeout);
+                    Thread.sleep(timeout);
+                    Log.d(TAG, "autoSelect: Thread: weak: ");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (!found) {
+                    autoSelectResolve(bleScanner.stopScan());
+                    autoSelectStopped = true;
+                }
+            }).start();
+
+            bleScanner.nearestDeviceListener(nearestDevice -> {
+                if (nearestDevice == null && !autoSelectStopped) {
+                    bleScanner.scanLeDevice(criteria, scan_period);
+                } else if (!autoSelectStopped) {
+                    autoSelectResolve(nearestDevice);
+                    found = true;
+                }
+            });
 
         }
 
