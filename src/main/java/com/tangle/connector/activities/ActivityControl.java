@@ -1,6 +1,7 @@
 package com.tangle.connector.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.bluetooth.le.ScanResult;
@@ -12,13 +13,16 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.transition.TransitionManager;
 import android.util.Log;
+import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
 import com.tangle.connector.BleScanner;
 import com.tangle.connector.Functions;
@@ -35,6 +39,8 @@ public class ActivityControl extends AppCompatActivity {
     public static final String COMMUNICATION_REJECT = "Connector reject()";
 
     private WebView webView;
+    private FloatingActionButton buttonDefaultUrl;
+    private ConstraintLayout layoutActivityControl;
 
     private TangleAndroidConnector connector;
     private BroadcastReceiver broadcastReceiver;
@@ -42,6 +48,7 @@ public class ActivityControl extends AppCompatActivity {
 
     private String macAddress = "";
     private String tangleParametersJson = "";
+    private String defaultWebUrl;
     private String webURL;
     private boolean connecting = false;
     private boolean disconnecting = false;
@@ -54,11 +61,27 @@ public class ActivityControl extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
 
+        layoutActivityControl = findViewById(R.id.layout_activity_control);
+
+        Intent intent = getIntent();
+        defaultWebUrl = intent.getStringExtra("defaultWebUrl");
+
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
-        webURL = mSharedPref.getString("webURL", "https://blockly.lukaskovar.repl.co");
+        webURL = mSharedPref.getString("webURL", defaultWebUrl);
 
         setWebView();
         setBroadcastReceiver();
+        setButtonDefaultUrl();
+        //TODO: defaultní webovku dostane activita skrz intent extra.
+        //TODO: pokud se ve webview otevře jiná stránka než defaultní, tak se zobrazí tlačítko zpět.
+    }
+
+    private void setButtonDefaultUrl() {
+        buttonDefaultUrl = findViewById(R.id.button_default_url);
+
+        buttonDefaultUrl.setOnClickListener(v -> {
+            webView.loadUrl(defaultWebUrl);
+        });
     }
 
     private void setWebView() {
@@ -83,21 +106,17 @@ public class ActivityControl extends AppCompatActivity {
 
         webView.loadUrl(webURL);
 
-//        webView.setWebViewClient(new WebViewClient() {
-//            @Override
-//            public void onPageFinished(WebView view, String url) {
-//                super.onPageFinished(view, url);
-//                if (connector != null) {
-//                    if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
-//                        webView.loadUrl("javascript:(function JavaCodeExec(){\n" +
-//                                "  eval(`document.dispatchEvent(new CustomEvent('tangle-state', {detail: \n" +
-//                                "    {type:\"connection\",status:\"connected\"}\n" +
-//                                "  }))`)\n" +
-//                                "})()");
-//                    }
-//                }
-//            }
-//        });
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                TransitionManager.beginDelayedTransition(layoutActivityControl);
+                if (!url.equals(defaultWebUrl)) {
+                    buttonDefaultUrl.setVisibility(View.VISIBLE);
+                } else
+                    buttonDefaultUrl.setVisibility(View.GONE);
+            }
+        });
     }
 
     private boolean isNetworkAvailable() {
@@ -128,10 +147,10 @@ public class ActivityControl extends AppCompatActivity {
                     sendResolve(bytes);
                     break;
                 case TangleAndroidConnector.REQUEST_WROTE_RESOLVE:
-                        if (readResponse){
-                            sendResolve();
-                        }
-                        break;
+                    if (readResponse) {
+                        sendResolve();
+                    }
+                    break;
                 case TangleAndroidConnector.CLOCK_WROTE_RESOLVE:
                 case TangleAndroidConnector.DELIVER_WROTE_RESOLVE:
                 case TangleAndroidConnector.TRANSMIT_WROTE_RESOLVE:
@@ -544,7 +563,7 @@ public class ActivityControl extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if(connector != null){
+        if (connector != null) {
             connector.disconnect();
         }
         super.onBackPressed();
@@ -552,7 +571,7 @@ public class ActivityControl extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if(connector != null){
+        if (connector != null) {
             connector.disconnect();
         }
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);

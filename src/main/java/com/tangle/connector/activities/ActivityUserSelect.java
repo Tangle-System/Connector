@@ -107,7 +107,7 @@ public class ActivityUserSelect extends AppCompatActivity {
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
             ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(TangleAndroidConnector.TRANSMITTER_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+                    .setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
 
             filters.add(scanFilterBuilder.build());
         } else {

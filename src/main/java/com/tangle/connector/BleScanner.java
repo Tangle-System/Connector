@@ -42,7 +42,7 @@ public class BleScanner {
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
             ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
-            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TRANSMITTER_SERVICE_UUID));
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID));
             filters.add(scanFilterBuilder.build());
         } else {
             Gson gson = new Gson();
