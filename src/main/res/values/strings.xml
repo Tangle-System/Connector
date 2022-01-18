@@ -4,7 +4,7 @@
     <string name="scan_again">Try again</string>
     <string name="back">Back</string>
     <string name="available_devices">Available devices:</string>
-    <string name="looking_for_devices">Searching devices...</string>
+    <string name="looking_for_devices">Searching devices…</string>
     <string name="no_device_in_range">Looks like no device is in range.</string>
     <string name="need_location_access">Tangle Connect app needs an access to your location.</string>
     <string name="accept">Accept</string>

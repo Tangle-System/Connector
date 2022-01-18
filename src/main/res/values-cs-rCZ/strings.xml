@@ -4,7 +4,7 @@
     <string name="scan_again">Zkusit znovu</string>
     <string name="back">Zpět</string>
     <string name="available_devices">K dispozici jsou následující zařízení:</string>
-    <string name="looking_for_devices">Hledáme dostupná zařízení...</string>
+    <string name="looking_for_devices">Hledáme dostupná zařízení…</string>
     <string name="no_device_in_range">Vypadá to, že v dosahu není žádné zařízení.</string>
     <string name="need_location_access">Aplikace Tangle Connect potřebuje přístup k poloze.</string>
     <string name="accept">Přijmout</string>
