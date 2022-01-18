@@ -6,4 +6,10 @@
     <string name="available_devices">Available devices:</string>
     <string name="looking_for_devices">Searching devices...</string>
     <string name="no_device_in_range">Looks like no device is in range.</string>
+    <string name="need_location_access">Tangle Connect app needs an access to your location.</string>
+    <string name="accept">Accept</string>
+    <string name="deny">Deny</string>
+    <string name="please_allow_location_access">Please enable location access for the app to work properly.</string>
+    <string name="limited_functionality">Limited functionality</string>
+    <string name="cant_work_without_location_access">No Tangle device can be find until the location access is enabled.</string>
 </resources>

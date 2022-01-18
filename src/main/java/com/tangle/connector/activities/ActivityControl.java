@@ -1,15 +1,19 @@
 package com.tangle.connector.activities;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.Manifest;
+import android.app.AlertDialog;
 import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -33,6 +37,7 @@ import com.tangle.connector.TangleParameters;
 public class ActivityControl extends AppCompatActivity {
 
     private static final String TAG = ActivityControl.class.getName();
+    private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     public static final String USER_SELECT_CANCELED_SELECTION = "userSelect -> reject('UserCanceledSelection')";
     public static final String USER_SELECT_FAILED = "userSelect -> reject('SelectionFailed')";
     public static final String USER_SELECT_RESOLVE = "userSelect -> resolve(tangleParameters)";
@@ -69,11 +74,34 @@ public class ActivityControl extends AppCompatActivity {
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", defaultWebUrl);
 
-        setWebView();
-        setBroadcastReceiver();
-        setButtonDefaultUrl();
-        //TODO: defaultní webovku dostane activita skrz intent extra.
-        //TODO: pokud se ve webview otevře jiná stránka než defaultní, tak se zobrazí tlačítko zpět.
+        if(permissionGuaranteed()) {
+            setWebView();
+            setBroadcastReceiver();
+            setButtonDefaultUrl();
+        }
+    }
+
+    private boolean permissionGuaranteed() {
+        if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if(this.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.need_location_access)
+                        .setMessage(R.string.please_allow_location_access)
+                        .setPositiveButton(R.string.accept, (dialog, which) -> requestPermissions(new String[]{
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                        }, PERMISSION_REQUEST_FINE_LOCATION))
+                        .setNegativeButton(R.string.deny,(dialog, which) -> finish())
+                        .setOnCancelListener(dialog -> finish())
+                        .show();
+            } else {
+                this.requestPermissions(new String[]{
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                }, PERMISSION_REQUEST_FINE_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private void setButtonDefaultUrl() {
@@ -545,6 +573,30 @@ public class ActivityControl extends AppCompatActivity {
                 }
             } else {
                 sendReject("Device is not selected");
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_FINE_LOCATION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "coarse location permission granted");
+
+                setWebView();
+                setBroadcastReceiver();
+                setButtonDefaultUrl();
+
+            } else {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.limited_functionality)
+                        .setMessage(R.string.cant_work_without_location_access)
+                        .setPositiveButton(R.string.accept,(dialog, which)-> this.requestPermissions(new String[]{
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                        }, PERMISSION_REQUEST_FINE_LOCATION))
+                        .setOnCancelListener(dialog -> finish())
+                        .show();
             }
         }
     }

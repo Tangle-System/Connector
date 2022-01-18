@@ -6,4 +6,10 @@
     <string name="available_devices">K dispozici jsou následující zařízení:</string>
     <string name="looking_for_devices">Hledáme dostupná zařízení...</string>
     <string name="no_device_in_range">Vypadá to, že v dosahu není žádné zařízení.</string>
+    <string name="need_location_access">Aplikace Tangle Connect potřebuje přístup k poloze.</string>
+    <string name="accept">Přijmout</string>
+    <string name="deny">Odmítnout</string>
+    <string name="please_allow_location_access">Pro správné fungování aplikace, prosím, povolte přístup k poloze.</string>
+    <string name="limited_functionality">Omezená funkcionalita</string>
+    <string name="cant_work_without_location_access">Dokud aplikaci nebude povolen přístup k poloze, nemůže vyhledat žádné Tangle zařízení.</string>
 </resources>
