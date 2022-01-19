@@ -375,6 +375,11 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void userSelect(String criteria) {
             Log.d(TAG, "userSelect: " + criteria);
+            if(connector!= null) {
+                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                    connector.disconnect();
+                }
+            }
 
             if (criteria != null) {
                 Intent intent = new Intent(getApplicationContext(), ActivityUserSelect.class);
@@ -388,6 +393,11 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void userSelect(String criteria, int timeout) {
             Log.d(TAG, "userSelect: " + criteria);
+            if(connector!= null) {
+                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                    connector.disconnect();
+                }
+            }
 
             if (criteria != null) {
                 Intent intent = new Intent(getApplicationContext(), ActivityUserSelect.class);
@@ -402,6 +412,12 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void autoSelect(String criteria, int scan_period, int timeout) {
             Log.d(TAG, "autoSelect: " + criteria);
+            if(connector!= null) {
+                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                    connector.disconnect();
+                }
+            }
+
             found = false;
             autoSelectStopped = false;
 
