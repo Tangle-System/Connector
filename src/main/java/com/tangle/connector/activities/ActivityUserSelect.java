@@ -66,6 +66,7 @@ public class ActivityUserSelect extends AppCompatActivity {
     private PairedDeviceAdapter mAdapter;
     private final ArrayList<ScanResult> pairedDeviceList = new ArrayList<>();
     private final Handler handler = new Handler();
+    private ScanCallback leScanCallback;
 
     private boolean scanning;
     private boolean selected = false;
@@ -133,7 +134,7 @@ public class ActivityUserSelect extends AppCompatActivity {
 
     private void scanLeDevice() {
         // Device scan callback.
-        ScanCallback leScanCallback = new ScanCallback() {
+        leScanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
@@ -168,19 +169,19 @@ public class ActivityUserSelect extends AppCompatActivity {
             }, SCAN_PERIOD);
 
             scanning = true;
-            Log.d(TAG, "Start scanning.");
+            Log.d(TAG, "scanLeDevice: Start scanning.");
             bluetoothLeScanner.startScan(filters, settingsBuilder.build(), leScanCallback);
 
         } else {
             scanning = false;
-            Log.d(TAG, "Stop scanning.");
+            Log.d(TAG, "scanLeDevice: Stop scanning.");
             bluetoothLeScanner.stopScan(leScanCallback);
         }
 
-        pairDevice(leScanCallback);
+        pairDevice();
     }
 
-    private void pairDevice(ScanCallback leScanCallback) {
+    private void pairDevice() {
         mListView.setOnItemClickListener((parent, view, position, id) -> {
             bluetoothLeScanner.stopScan(leScanCallback);
 
@@ -352,17 +353,16 @@ public class ActivityUserSelect extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        if (scanning) {
-            scanLeDevice();
-        }
+        bluetoothLeScanner.stopScan(leScanCallback);
+        scanning = false;
         super.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        if (scanning) {
-            scanLeDevice();
-        }
+        bluetoothLeScanner.stopScan(leScanCallback);
+        scanning = false;
+
         if (!selected) {
             Intent intent = new Intent(getApplicationContext(), ActivityControl.class);
             intent.setAction(ActivityControl.USER_SELECT_CANCELED_SELECTION);

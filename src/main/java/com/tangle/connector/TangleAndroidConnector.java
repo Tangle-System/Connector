@@ -20,6 +20,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.tangle.connector.activities.ActivityControl;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -32,6 +33,7 @@ public class TangleAndroidConnector extends Service {
     public static final int COMMUNICATION_TYPE_TRANSMIT = 1;
     public static final int COMMUNICATION_TYPE_REQUEST = 2;
     public static final int COMMUNICATION_TYPE_CLOCK = 3;
+    public static final int COMMUNICATION_TYPE_UPDATE_FIRMWARE = 4;
 
     //=====// CHARACTERISTIC_COMMUNICATION_CONSTANTS //=====//
     public static final int CLOCK_READ_RESOLVE = 0;
@@ -44,14 +46,14 @@ public class TangleAndroidConnector extends Service {
     public static final int REQUEST_WROTE_RESOLVE = 6;
     public static final int REQUEST_WROTE_REJECT = 7;
 
-
     public static final int DELIVER_WROTE_RESOLVE = 8;
-    public static final int TRANSMIT_WROTE_RESOLVE = 9;
+    public static final int DELIVER_WROTE_REJECT = 9;
 
-    public static final int DELIVER_WROTE_REJECT = 10;
+    public static final int TRANSMIT_WROTE_RESOLVE = 10;
     public static final int TRANSMIT_WROTE_REJECT = 11;
 
-
+    public static final int UPDATE_FIRMWARE_RESOLVE = 12;
+    public static final int UPDATE_FIRMWARE_REJECT = 13;
 
 
     private final String deviceMacAddress;
@@ -59,6 +61,8 @@ public class TangleAndroidConnector extends Service {
 
     private volatile boolean isDataSent = true;
     private boolean requested = false;
+    private boolean otaUpdateFailed = false;
+    private boolean otaUpdateEnd = false;
     private int communicationType;
     private int writtenUpdate;
     private float updateProgress;
@@ -159,7 +163,7 @@ public class TangleAndroidConnector extends Service {
             synchronized (mAsyncWriteReadThread) {
                 isDataSent = true;
                 requested = false;
-                Log.d(TAG, "onCharacteristicRead: mAsyncWriteReadThread: notify");
+//                Log.d(TAG, "onCharacteristicRead: mAsyncWriteReadThread: notify");
                 mAsyncWriteReadThread.notify();
             }
             if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -188,7 +192,7 @@ public class TangleAndroidConnector extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS && data != null) {
                 synchronized (mAsyncWriteReadThread) {
                     isDataSent = true;
-                    Log.d(TAG, "onCharacteristicWrite: mAsyncWriteReadThread: notify");
+//                    Log.d(TAG, "onCharacteristicWrite: mAsyncWriteReadThread: notify");
                     mAsyncWriteReadThread.notify();
                 }
                 Log.d(TAG, "Wrote bytes: " + Functions.logBytes(data));
@@ -196,7 +200,7 @@ public class TangleAndroidConnector extends Service {
                     if (characteristic.getUuid().equals(CLOCK_CHAR_UUID)) {
                         characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], CLOCK_WROTE_RESOLVE);
                     } else if (characteristic.getUuid().toString().equals(TERMINAL_CHAR_UUID.toString())) {
-                        switch (communicationType){
+                        switch (communicationType) {
                             case COMMUNICATION_TYPE_DELIVER:
                                 characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], DELIVER_WROTE_RESOLVE);
                                 break;
@@ -205,7 +209,16 @@ public class TangleAndroidConnector extends Service {
                                 break;
                         }
                     } else if (characteristic.getUuid().toString().equals(DEVICE_CHAR_UUID.toString())) {
-                        characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], REQUEST_WROTE_RESOLVE);
+                        switch (communicationType) {
+                            case COMMUNICATION_TYPE_REQUEST:
+                                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], REQUEST_WROTE_RESOLVE);
+                                break;
+                            case COMMUNICATION_TYPE_UPDATE_FIRMWARE:
+                                if (otaUpdateEnd) {
+                                    characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], UPDATE_FIRMWARE_RESOLVE);
+                                }
+                                break;
+                        }
                     }
                 }
             } else {
@@ -222,6 +235,9 @@ public class TangleAndroidConnector extends Service {
                     case COMMUNICATION_TYPE_CLOCK:
                         characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], CLOCK_WROTE_REJECT);
                         break;
+                    case COMMUNICATION_TYPE_UPDATE_FIRMWARE:
+                        otaUpdateFailed = true;
+                        characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], UPDATE_FIRMWARE_REJECT);
                 }
             }
         }
@@ -231,7 +247,7 @@ public class TangleAndroidConnector extends Service {
             super.onMtuChanged(gatt, mtu, status);
             synchronized (mAsyncWriteReadThread) {
                 isDataSent = true;
-                Log.d(TAG, "onMtuChanged: mAsyncWriteReadThread: notify");
+//                Log.d(TAG, "onMtuChanged: mAsyncWriteReadThread: notify");
                 mAsyncWriteReadThread.notify();
             }
             setConnectionState(STATE_CONNECTED);
@@ -259,13 +275,6 @@ public class TangleAndroidConnector extends Service {
         return true;
     }
 
-    private void sendRejectBroadcast(String massage) {
-        Intent intent = new Intent(mContext, ActivityControl.class);
-        intent.setAction(ActivityControl.COMMUNICATION_REJECT);
-        intent.putExtra("massage", massage);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    }
-
     public void deliver(byte[] command_payload) {
         communicationType = COMMUNICATION_TYPE_DELIVER;
         mAsyncWriteReadThread.mHandler.post(() -> {
@@ -276,7 +285,7 @@ public class TangleAndroidConnector extends Service {
                 writeBytes(TERMINAL_CHAR_UUID, command_payload, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             } catch (Exception e) {
                 Log.d(TAG, "deliver: failed with: " + e);
-                sendRejectBroadcast("DeliverFailed");
+                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], DELIVER_WROTE_REJECT);
             }
         });
     }
@@ -291,7 +300,7 @@ public class TangleAndroidConnector extends Service {
                 writeBytes(TERMINAL_CHAR_UUID, command_payload, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
             } catch (Exception e) {
                 Log.d(TAG, "transmit: failed with: " + e);
-                sendRejectBroadcast("TransmitFailed");
+                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], TRANSMIT_WROTE_REJECT);
             }
         });
     }
@@ -308,10 +317,10 @@ public class TangleAndroidConnector extends Service {
                 writeBytes(DEVICE_CHAR_UUID, command_payload, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             } catch (Exception e) {
                 Log.d(TAG, "request: failed with: " + e);
-                sendRejectBroadcast("RequestFailed");
+                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], REQUEST_WROTE_REJECT);
                 return;
             }
-            if(!red_response){
+            if (!red_response) {
                 return;
             }
             if (!isDataSent) {
@@ -331,7 +340,7 @@ public class TangleAndroidConnector extends Service {
                 writeClock(clock);
             } catch (Exception e) {
                 Log.d(TAG, "setClock: failed with: " + e);
-                sendRejectBroadcast("ClockWriteFailed");
+                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], CLOCK_WROTE_REJECT);
             }
         });
     }
@@ -347,8 +356,7 @@ public class TangleAndroidConnector extends Service {
 
     }
 
-    //TODO: throw exception
-    /*public void updateFirmware(byte[] firmware) {
+    public void updateFirmware(byte[] firmware) {
         //TODO: pokud některá část selže zastavit i zbytek.
         final int FLAG_OTA_BEGIN = 255;
         final int FLAG_OTA_WRITE = 0;
@@ -356,16 +364,23 @@ public class TangleAndroidConnector extends Service {
         final int FLAG_OTA_RESET = 253;
 
         int data_size = 4992; // must by modulo 16
+        otaUpdateFailed = false;
+        otaUpdateEnd = false;
 
         Log.i(TAG, "writeFirmware: OTA UPDATE");
         Log.i(TAG, "writeFirmware: firmware");
-        // TODO emit event: window.tangleConnect.emit("ota_status", "begin");
+        communicationType = COMMUNICATION_TYPE_UPDATE_FIRMWARE;
+        otaUpdateProgressListener.onOTAUpdateProgressChange(-1); // ota_status = begin
+
         //===========// RESET //===========//
-        mAsyncWriteThread.mHandler.post(() -> {
+        mAsyncWriteReadThread.mHandler.post(() -> {
             Log.i(TAG, "writeFirmware: OTA RESET");
 
             if (!isDataSent) {
                 pauseThread();
+            }
+            if (otaUpdateFailed) {
+                return;
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -379,16 +394,16 @@ public class TangleAndroidConnector extends Service {
             byte[] bytes = outputStream.toByteArray();
 
             try {
-                writeBytes(UPDATE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                writeBytes(DEVICE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             } catch (Exception e) {
                 Log.d(TAG, "updateFirmware: failed");
-                //TODO emit event: window.tangleConnect.emit("ota_status", "fail");
-                sendRejectBroadcast("UpdateFailed");
+                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], UPDATE_FIRMWARE_REJECT);
+                otaUpdateFailed = true;
             }
         });
 
         //===========// BEGIN //===========//
-        mAsyncWriteThread.mHandler.post(() -> {
+        mAsyncWriteReadThread.mHandler.post(() -> {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -399,6 +414,9 @@ public class TangleAndroidConnector extends Service {
 
             if (!isDataSent) {
                 pauseThread();
+            }
+            if (otaUpdateFailed) {
+                return;
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -412,14 +430,15 @@ public class TangleAndroidConnector extends Service {
             byte[] bytes = outputStream.toByteArray();
 
             try {
-                writeBytes(UPDATE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                writeBytes(DEVICE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             } catch (Exception e) {
-                sendRejectBroadcast();
+                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], UPDATE_FIRMWARE_REJECT);
+                otaUpdateFailed = true;
             }
         });
 
         //===========// WRITE //===========//
-        mAsyncWriteThread.mHandler.post(() -> {
+        mAsyncWriteReadThread.mHandler.post(() -> {
             int indexFrom = 0;
             int indexTo = data_size;
 
@@ -441,6 +460,9 @@ public class TangleAndroidConnector extends Service {
                 if (!isDataSent) {
                     pauseThread();
                 }
+                if (otaUpdateFailed) {
+                    return;
+                }
 
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 try {
@@ -454,10 +476,11 @@ public class TangleAndroidConnector extends Service {
                 byte[] bytes = outputStream.toByteArray();
 
                 try {
-                    writeBytes(UPDATE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                    writeBytes(DEVICE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
                 } catch (Exception e) {
                     Log.d(TAG, "updateFirmware: failed");
-                    sendRejectBroadcast();
+                    characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], UPDATE_FIRMWARE_REJECT);
+                    otaUpdateFailed = true;
                     return;
                 }
                 writtenUpdate += indexTo - indexFrom;
@@ -473,7 +496,7 @@ public class TangleAndroidConnector extends Service {
         });
 
         //===========// END //===========//
-        mAsyncWriteThread.mHandler.post(() -> {
+        mAsyncWriteReadThread.mHandler.post(() -> {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -484,6 +507,9 @@ public class TangleAndroidConnector extends Service {
 
             if (!isDataSent) {
                 pauseThread();
+            }
+            if (otaUpdateFailed) {
+                return;
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -497,14 +523,15 @@ public class TangleAndroidConnector extends Service {
             byte[] bytes = outputStream.toByteArray();
 
             try {
-                writeBytes(UPDATE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                otaUpdateEnd = true;
+                writeBytes(DEVICE_CHAR_UUID, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             } catch (Exception e) {
                 Log.d(TAG, "updateFirmware: failed");
-                sendRejectBroadcast();
+                characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], UPDATE_FIRMWARE_REJECT);
+                otaUpdateFailed = true;
             }
-            //TODO: Send resolve at end
         });
-    }*/
+    }
 
     private void writeClock(byte[] clock) throws Exception {
         BluetoothGattCharacteristic characteristic = mBluetoothGatt.getService(TANGLE_SERVICE_UUID).getCharacteristic(CLOCK_CHAR_UUID);
@@ -595,7 +622,7 @@ public class TangleAndroidConnector extends Service {
     private void pauseThread() {
         synchronized (mAsyncWriteReadThread) {
             try {
-                Log.d(TAG, "mAsyncWriteReadThread: paused");
+//                Log.d(TAG, "mAsyncWriteReadThread: paused");
                 mAsyncWriteReadThread.wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -606,15 +633,15 @@ public class TangleAndroidConnector extends Service {
     public void disconnect() {
         Log.d(TAG, "Call close");
         if (mBluetoothGatt == null) {
-        setConnectionState(STATE_DISCONNECTED);
+            setConnectionState(STATE_DISCONNECTED);
             return;
         }
 
-        if(connectionState == STATE_CONNECTED){
+        if (connectionState == STATE_CONNECTED) {
             mBluetoothGatt.disconnect();
-        } else{
-        mBluetoothGatt.close();
-        mBluetoothGatt = null;
+        } else {
+            mBluetoothGatt.close();
+            mBluetoothGatt = null;
         }
     }
 

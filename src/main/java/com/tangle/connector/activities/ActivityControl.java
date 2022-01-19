@@ -74,7 +74,7 @@ public class ActivityControl extends AppCompatActivity {
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", defaultWebUrl);
 
-        if(permissionGuaranteed()) {
+        if (permissionGuaranteed()) {
             setWebView();
             setBroadcastReceiver();
             setButtonDefaultUrl();
@@ -83,14 +83,14 @@ public class ActivityControl extends AppCompatActivity {
 
     private boolean permissionGuaranteed() {
         if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if(this.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
+            if (this.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle(R.string.need_location_access)
                         .setMessage(R.string.please_allow_location_access)
                         .setPositiveButton(R.string.accept, (dialog, which) -> requestPermissions(new String[]{
                                 Manifest.permission.ACCESS_FINE_LOCATION
                         }, PERMISSION_REQUEST_FINE_LOCATION))
-                        .setNegativeButton(R.string.deny,(dialog, which) -> finish())
+                        .setNegativeButton(R.string.deny, (dialog, which) -> finish())
                         .setOnCancelListener(dialog -> finish())
                         .show();
             } else {
@@ -160,48 +160,6 @@ public class ActivityControl extends AppCompatActivity {
             return;
         }
         bluetoothService();
-
-        connector.setOTAUpdateProgressListener(updateProgress -> {
-            runOnUiThread(() -> {
-                Log.d(TAG, "onOtaUpdateProgress: " + updateProgress);
-                webView.loadUrl("window.tangleConnect.emit('ota_progress', " + updateProgress + ");");
-            });
-        });
-
-        connector.setCharacteristicCommunicationListener((bytes, characteristic) -> {
-            switch (characteristic) {
-                case TangleAndroidConnector.CLOCK_READ_RESOLVE:
-                case TangleAndroidConnector.REQUEST_READ_RESOLVE:
-                    sendResolve(bytes);
-                    break;
-                case TangleAndroidConnector.REQUEST_WROTE_RESOLVE:
-                    if (readResponse) {
-                        sendResolve();
-                    }
-                    break;
-                case TangleAndroidConnector.CLOCK_WROTE_RESOLVE:
-                case TangleAndroidConnector.DELIVER_WROTE_RESOLVE:
-                case TangleAndroidConnector.TRANSMIT_WROTE_RESOLVE:
-                    sendResolve();
-                    break;
-                case TangleAndroidConnector.CLOCK_READ_REJECT:
-                    sendReject("ClockReadFailed");
-                    break;
-                case TangleAndroidConnector.CLOCK_WROTE_REJECT:
-                    sendReject("ClockWriteFailed");
-                    break;
-                case TangleAndroidConnector.REQUEST_READ_REJECT:
-                case TangleAndroidConnector.REQUEST_WROTE_REJECT:
-                    sendReject("RequestFailed");
-                    break;
-                case TangleAndroidConnector.DELIVER_WROTE_REJECT:
-                    sendReject("DeliverFailed");
-                    break;
-                case TangleAndroidConnector.TRANSMIT_WROTE_REJECT:
-                    sendReject("TransmitFailed");
-                    break;
-            }
-        });
     }
 
     private void sendResolveNull() {
@@ -287,9 +245,6 @@ public class ActivityControl extends AppCompatActivity {
                         break;
                     case USER_SELECT_FAILED:
                         sendReject("SelectionFailed");
-                    case COMMUNICATION_REJECT:
-                        String massage = intent.getStringExtra("massage");
-                        sendReject(massage);
                         break;
                 }
             }
@@ -297,7 +252,6 @@ public class ActivityControl extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, new IntentFilter(USER_SELECT_RESOLVE));
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, new IntentFilter(USER_SELECT_CANCELED_SELECTION));
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, new IntentFilter(USER_SELECT_FAILED));
-        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, new IntentFilter(COMMUNICATION_REJECT));
     }
 
 
@@ -328,6 +282,66 @@ public class ActivityControl extends AppCompatActivity {
                         break;
                 }
             });
+        });
+
+        connector.setOTAUpdateProgressListener(updateProgress -> {
+            if (updateProgress == -1) {
+                runOnUiThread(() -> {
+                    webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'begin');");
+                });
+            } else {
+                Log.d(TAG, "onOtaUpdateProgress: " + updateProgress);
+                runOnUiThread(() -> {
+                    webView.loadUrl("javascript:window.tangleConnect.emit('ota_progress', " + updateProgress + ");");
+                });
+            }
+        });
+
+        connector.setCharacteristicCommunicationListener((bytes, communicationType) -> {
+            switch (communicationType) {
+                case TangleAndroidConnector.CLOCK_READ_RESOLVE:
+                case TangleAndroidConnector.REQUEST_READ_RESOLVE:
+                    sendResolve(bytes);
+                    break;
+                case TangleAndroidConnector.REQUEST_WROTE_RESOLVE:
+                    if (!readResponse) {
+                        sendResolve();
+                    }
+                    break;
+                case TangleAndroidConnector.CLOCK_WROTE_RESOLVE:
+                case TangleAndroidConnector.DELIVER_WROTE_RESOLVE:
+                case TangleAndroidConnector.TRANSMIT_WROTE_RESOLVE:
+                    sendResolve();
+                    break;
+                case TangleAndroidConnector.CLOCK_READ_REJECT:
+                    sendReject("ClockReadFailed");
+                    break;
+                case TangleAndroidConnector.CLOCK_WROTE_REJECT:
+                    sendReject("ClockWriteFailed");
+                    break;
+                case TangleAndroidConnector.REQUEST_READ_REJECT:
+                case TangleAndroidConnector.REQUEST_WROTE_REJECT:
+                    sendReject("RequestFailed");
+                    break;
+                case TangleAndroidConnector.DELIVER_WROTE_REJECT:
+                    sendReject("DeliverFailed");
+                    break;
+                case TangleAndroidConnector.TRANSMIT_WROTE_REJECT:
+                    sendReject("TransmitFailed");
+                    break;
+                case TangleAndroidConnector.UPDATE_FIRMWARE_RESOLVE:
+                    runOnUiThread(() -> {
+                        webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'success');");
+                    });
+                    sendResolve();
+                    break;
+                case TangleAndroidConnector.UPDATE_FIRMWARE_REJECT:
+                    runOnUiThread(() -> {
+                        webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'fail');");
+                    });
+                    sendReject("UpdateFailed");
+                    break;
+            }
         });
     }
 
@@ -547,32 +561,24 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void readClock() {
             Log.d(TAG, "readClock: ");
-            if (connector != null) {
-                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
-                    connector.getClock();
-                } else {
-                    sendReject("Device is not connected");
-                }
+            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                connector.getClock();
             } else {
-                sendReject("Device is not selected");
+                sendReject("DeviceNotConnected");
             }
         }
 
         @JavascriptInterface
-        public void updateFirmware(byte[] firmware) {
+        public void updateFW(byte[] firmware) {
             Log.d(TAG, "updateFirmware: ");
-            if (connector != null) {
-                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
-                    if (firmware != null) {
-//                        connector.updateFirmware(firmware);
-                    } else {
-                        sendReject("Firmware null");
-                    }
+            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                if (firmware != null) {
+                    connector.updateFirmware(firmware);
                 } else {
-                    sendReject("Device is not connected");
+                    sendReject("FirmwareNull");
                 }
             } else {
-                sendReject("Device is not selected");
+                sendReject("DeviceNotConnected");
             }
         }
     }
@@ -592,7 +598,7 @@ public class ActivityControl extends AppCompatActivity {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle(R.string.limited_functionality)
                         .setMessage(R.string.cant_work_without_location_access)
-                        .setPositiveButton(R.string.accept,(dialog, which)-> this.requestPermissions(new String[]{
+                        .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
                                 Manifest.permission.ACCESS_FINE_LOCATION
                         }, PERMISSION_REQUEST_FINE_LOCATION))
                         .setOnCancelListener(dialog -> finish())
