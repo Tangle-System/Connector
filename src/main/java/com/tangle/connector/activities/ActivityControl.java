@@ -24,7 +24,9 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.TextView;
+
+import com.github.javiersantos.appupdater.AppUpdater;
+import com.github.javiersantos.appupdater.enums.UpdateFrom;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
@@ -66,10 +68,17 @@ public class ActivityControl extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
 
+        hideSystemUI();
+        onChangeVisibility();
+
         layoutActivityControl = findViewById(R.id.layout_activity_control);
 
         Intent intent = getIntent();
         defaultWebUrl = intent.getStringExtra("defaultWebUrl");
+        if(intent.getStringExtra("updaterUrl")!= null){
+            setAppUpdater(intent.getStringExtra("updaterUrl"));
+        }
+
 
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", defaultWebUrl);
@@ -151,6 +160,19 @@ public class ActivityControl extends AppCompatActivity {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    public void setAppUpdater(String url) {
+        AppUpdater appUpdater = new AppUpdater(this);
+        appUpdater.setUpdateFrom(UpdateFrom.JSON)
+                .setUpdateJSON(url)
+                .setTitleOnUpdateAvailable("New version available")
+                .setContentOnUpdateAvailable("Please update the application to ensure that all functions work properly.")
+                .setButtonUpdate("Update now")
+                .setButtonDismiss("Later")
+                .setButtonDoNotShowAgain("")
+                .setCancelable(false)
+                .start();
     }
 
     private void bluetoothConnect() {
@@ -620,6 +642,57 @@ public class ActivityControl extends AppCompatActivity {
                         .setOnCancelListener(dialog -> finish())
                         .show();
             }
+        }
+    }
+
+    private void hideSystemUI() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+    }
+
+    public void onChangeVisibility() {
+        View decorView = getWindow().getDecorView();
+        decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
+            // Note that system bars will only be "visible" if none of the
+            // LOW_PROFILE, HIDE_NAVIGATION, or FULLSCREEN flags are set.
+            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                Log.d(TAG, "hideSystemUI: visible");
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(2500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    runOnUiThread(this::hideSystemUI);
+                }).start();
+                // adjustments to your UI, such as showing the action bar or
+                // other navigational controls.
+            } else {
+                Log.d(TAG, "hideSystemUI: invisible");
+                // adjustments to your UI, such as hiding the action bar or
+                // other navigational controls.
+            }
+        });
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            hideSystemUI();
         }
     }
 
