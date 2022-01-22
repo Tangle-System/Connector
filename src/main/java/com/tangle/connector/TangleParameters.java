@@ -20,6 +20,7 @@ public class TangleParameters implements Parcelable {
     private String namePrefix = "";
     private String ownerSignature = "";
     private String fwVersion = "";
+    private String macAddress = "";
     private int productCode;
     private boolean adoptionFlag;
 
@@ -35,6 +36,7 @@ public class TangleParameters implements Parcelable {
         namePrefix = in.readString();
         ownerSignature = in.readString();
         fwVersion = in.readString();
+        macAddress = in.readString();
         productCode = in.readInt();
         adoptionFlag = in.readByte() != 0;
     }
@@ -83,6 +85,14 @@ public class TangleParameters implements Parcelable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getMacAddress() {
+        return macAddress;
+    }
+
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
     }
 
     public String getNamePrefix() {
@@ -137,6 +147,7 @@ public class TangleParameters implements Parcelable {
         dest.writeString(namePrefix);
         dest.writeString(ownerSignature);
         dest.writeString(fwVersion);
+        dest.writeString(macAddress);
         dest.writeInt(productCode);
         dest.writeByte((byte) (adoptionFlag ? 1 : 0));
     }
@@ -270,7 +281,7 @@ public class TangleParameters implements Parcelable {
         }
 
         private static boolean parseAdoptingFlag(byte b) {
-            return Byte.toUnsignedInt(b) == 1;
+            return b == 1;
         }
     }
 }

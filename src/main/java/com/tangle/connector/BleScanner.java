@@ -58,6 +58,9 @@ public class BleScanner {
                     if (!criterion.getName().equals("")) {
                         scanFilterBuilder.setDeviceName(criterion.getName());
                     }
+                    if (!criterion.getMacAddress().equals("")){
+                        scanFilterBuilder.setDeviceAddress(criterion.getMacAddress());
+                    }
                     filters.add(scanFilterBuilder.build());
                 }
             } catch (IOException e) {
