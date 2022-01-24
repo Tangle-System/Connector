@@ -152,6 +152,8 @@ public class TangleAndroidConnector extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 gatt.requestMtu(517);
                 isDataSent = false;
+                setConnectionState(STATE_CONNECTED);
+
             } else {
                 Log.w(TAG, "onServicesDiscovered: " + status);
             }
@@ -250,7 +252,6 @@ public class TangleAndroidConnector extends Service {
 //                Log.d(TAG, "onMtuChanged: mAsyncWriteReadThread: notify");
                 mAsyncWriteReadThread.notify();
             }
-            setConnectionState(STATE_CONNECTED);
             Log.d(TAG, "onMtuChanged: " + mtu);
         }
     };
@@ -272,7 +273,7 @@ public class TangleAndroidConnector extends Service {
                 return false;
             }
         }
-        return true;
+        return  true;
     }
 
     public void deliver(byte[] command_payload) {

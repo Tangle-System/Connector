@@ -178,8 +178,8 @@ public class ActivityControl extends AppCompatActivity {
 
     private void bluetoothConnect() {
         if (!connector.connect()) {
-            sendReject("ConnectionFailed");
-            connecting = false;
+            //TODO vyresit cyklus
+            bluetoothConnect();
             return;
         }
         bluetoothService();
@@ -699,7 +699,6 @@ public class ActivityControl extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-
         mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
         super.onStop();
     }
@@ -711,10 +710,7 @@ public class ActivityControl extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (connector != null) {
-            connector.disconnect();
-        }
-        super.onBackPressed();
+//        super.onBackPressed();
     }
 
     @Override
