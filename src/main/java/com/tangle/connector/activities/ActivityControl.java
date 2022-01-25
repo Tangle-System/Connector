@@ -17,6 +17,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.transition.TransitionManager;
 import android.util.Log;
@@ -619,6 +620,12 @@ public class ActivityControl extends AppCompatActivity {
             } else {
                 sendReject("DeviceNotConnected");
             }
+        }
+
+        @JavascriptInterface
+        public void open(String url){
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(browserIntent);
         }
     }
 
