@@ -45,7 +45,6 @@ public class ActivityControl extends AppCompatActivity {
     public static final String USER_SELECT_CANCELED_SELECTION = "userSelect -> reject('UserCanceledSelection')";
     public static final String USER_SELECT_FAILED = "userSelect -> reject('SelectionFailed')";
     public static final String USER_SELECT_RESOLVE = "userSelect -> resolve(tangleParameters)";
-    public static final String COMMUNICATION_REJECT = "Connector reject()";
 
     private WebView webView;
     private FloatingActionButton buttonDefaultUrl;
