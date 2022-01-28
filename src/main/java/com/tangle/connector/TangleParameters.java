@@ -65,6 +65,7 @@ public class TangleParameters implements Parcelable {
 
     }
 
+    //TODO: Nevracet pole bytů ale přidat do odkazu na pole filtrů další filtry
     public byte[] getManufactureDataFilter() throws IOException {
         if (manufactureDataFilter == null) {
             compileManufactureData();
@@ -179,16 +180,24 @@ public class TangleParameters implements Parcelable {
                 Matcher m = p.matcher(fwVersion);
 
                 if (m.find()) {
-                    if (Objects.requireNonNull(m.group(1)).equals("!")) {
-                        //TODO: compile fww version reverse filter ( vyfiltruj vsechnz verze kromne te co je vzbrana)
-                    }
-
                     int versionCode = 0;
                     versionCode = groupToInt(m.group(2)) * 10000;
                     versionCode += groupToInt(m.group(3)) * 100;
                     versionCode += groupToInt(m.group(4));
-                    manufactureDataFilter.write(Functions.integerToBytes(versionCode, 2));
-                    manufactureDataMask.write(Functions.integerToBytes(0xffff, 2));
+
+                    if (Objects.requireNonNull(m.group(1)).equals("!")) {
+                        //TODO: compile fww version reverse filter ( vyfiltruj vsechnz verze kromne te co je vzbrana)
+//                        for (int i = 0; i < 2; i++) {
+//                            for (int j = 0; j < 8; j++) {
+//                                for (int k = 0; k < 2; k++) {
+//
+//                                }
+//                            }
+//                        }
+                    } else {
+                        manufactureDataFilter.write(Functions.integerToBytes(versionCode, 2));
+                        manufactureDataMask.write(Functions.integerToBytes(0xffff, 2));
+                    }
                 } else {
                     manufactureDataFilter.write(Functions.integerToBytes(0, 2));
                     manufactureDataMask.write(Functions.integerToBytes(0, 2));

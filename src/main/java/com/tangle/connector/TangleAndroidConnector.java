@@ -15,9 +15,6 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-import com.tangle.connector.activities.ActivityControl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -267,6 +264,7 @@ public class TangleAndroidConnector extends Service {
         } else {
             try {
                 final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceMacAddress);
+
                 mBluetoothGatt = device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
             } catch (IllegalArgumentException exception) {
                 Log.w(TAG, "Device not found with provided address.");
@@ -358,7 +356,6 @@ public class TangleAndroidConnector extends Service {
     }
 
     public void updateFirmware(byte[] firmware) {
-        //TODO: pokud některá část selže zastavit i zbytek.
         final int FLAG_OTA_BEGIN = 255;
         final int FLAG_OTA_WRITE = 0;
         final int FLAG_OTA_END = 254;

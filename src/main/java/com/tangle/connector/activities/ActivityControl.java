@@ -18,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.transition.TransitionManager;
 import android.util.Log;
@@ -42,6 +43,7 @@ public class ActivityControl extends AppCompatActivity {
 
     private static final String TAG = ActivityControl.class.getName();
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
+    private static final int PERMISSION_REQUEST_BLUETOOTH = 2;
     public static final String USER_SELECT_CANCELED_SELECTION = "userSelect -> reject('UserCanceledSelection')";
     public static final String USER_SELECT_FAILED = "userSelect -> reject('SelectionFailed')";
     public static final String USER_SELECT_RESOLVE = "userSelect -> resolve(tangleParameters)";
@@ -83,14 +85,14 @@ public class ActivityControl extends AppCompatActivity {
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", defaultWebUrl);
 
-        if (permissionGuaranteed()) {
+        if (permissionAccessFineLocationGuaranteed() && permissionBluetoothConnectGuaranteed()) {
             setWebView();
             setBroadcastReceiver();
             setButtonDefaultUrl();
         }
     }
 
-    private boolean permissionGuaranteed() {
+    private boolean permissionAccessFineLocationGuaranteed() {
         if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (this.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -106,6 +108,31 @@ public class ActivityControl extends AppCompatActivity {
                 this.requestPermissions(new String[]{
                         Manifest.permission.ACCESS_FINE_LOCATION
                 }, PERMISSION_REQUEST_FINE_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private boolean permissionBluetoothConnectGuaranteed() {
+        if (this.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED && this.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (this.shouldShowRequestPermissionRationale(Manifest.permission.BLUETOOTH_CONNECT)) {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.need_location_access)
+                        .setMessage(R.string.please_allow_location_access)
+                        .setPositiveButton(R.string.accept, (dialog, which) -> requestPermissions(new String[]{
+                                Manifest.permission.BLUETOOTH_CONNECT,
+                                Manifest.permission.BLUETOOTH_SCAN
+                        }, PERMISSION_REQUEST_BLUETOOTH))
+                        .setNegativeButton(R.string.deny, (dialog, which) -> finish())
+                        .setOnCancelListener(dialog -> finish())
+                        .show();
+            } else {
+                this.requestPermissions(new String[]{
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                        Manifest.permission.BLUETOOTH_SCAN
+                }, PERMISSION_REQUEST_BLUETOOTH);
             }
             return false;
         } else {
@@ -177,8 +204,7 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     private void bluetoothConnect() {
-        if (!connector.connect()) {
-            //TODO vyresit cyklus
+        if (!connector.connect() && connecting){
             bluetoothConnect();
             return;
         }
@@ -633,11 +659,11 @@ public class ActivityControl extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_FINE_LOCATION) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "coarse location permission granted");
-
-                setWebView();
-                setBroadcastReceiver();
-                setButtonDefaultUrl();
+                if(permissionAccessFineLocationGuaranteed()) {
+                    setWebView();
+                    setBroadcastReceiver();
+                    setButtonDefaultUrl();
+                }
 
             } else {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -646,6 +672,24 @@ public class ActivityControl extends AppCompatActivity {
                         .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
                                 Manifest.permission.ACCESS_FINE_LOCATION
                         }, PERMISSION_REQUEST_FINE_LOCATION))
+                        .setOnCancelListener(dialog -> finish())
+                        .show();
+            }
+        } else if (requestCode == PERMISSION_REQUEST_BLUETOOTH){
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if(permissionAccessFineLocationGuaranteed()) {
+                    setWebView();
+                    setBroadcastReceiver();
+                    setButtonDefaultUrl();
+                }
+            } else {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.limited_functionality)
+                        .setMessage(R.string.cant_work_without_location_access)
+                        .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
+                                Manifest.permission.BLUETOOTH_SCAN,
+                                Manifest.permission.BLUETOOTH_CONNECT
+                        }, PERMISSION_REQUEST_BLUETOOTH))
                         .setOnCancelListener(dialog -> finish())
                         .show();
             }
