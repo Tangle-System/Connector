@@ -26,6 +26,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
@@ -545,6 +546,10 @@ public class ActivityControl extends AppCompatActivity {
                 sendReject("DeliverFailed");
                 return;
             }
+            //TODO: delete after debug DEV OPTION
+            int command_length = command_payload.length;
+            Toast.makeText(getApplicationContext(), "" + command_length, Toast.LENGTH_LONG).show();
+
             Log.d(TAG, "deliver: " + Functions.logBytes(command_payload));
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.deliver(command_payload);
