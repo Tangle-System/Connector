@@ -78,18 +78,19 @@ public class ActivityControl extends AppCompatActivity {
 
         Intent intent = getIntent();
         defaultWebUrl = intent.getStringExtra("defaultWebUrl");
-        if(intent.getStringExtra("updaterUrl")!= null){
+        if (intent.getStringExtra("updaterUrl") != null) {
             setAppUpdater(intent.getStringExtra("updaterUrl"));
         }
-
 
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", defaultWebUrl);
 
-        if (permissionAccessFineLocationGuaranteed() && permissionBluetoothConnectGuaranteed()) {
-            setWebView();
-            setBroadcastReceiver();
-            setButtonDefaultUrl();
+        if (permissionAccessFineLocationGuaranteed()) {
+            if (permissionBluetoothConnectGuaranteed()) {
+                setWebView();
+                setBroadcastReceiver();
+                setButtonDefaultUrl();
+            }
         }
     }
 
@@ -117,28 +118,29 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     private boolean permissionBluetoothConnectGuaranteed() {
-        if (this.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED && this.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (this.shouldShowRequestPermissionRationale(Manifest.permission.BLUETOOTH_CONNECT)) {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.need_location_access)
-                        .setMessage(R.string.please_allow_location_access)
-                        .setPositiveButton(R.string.accept, (dialog, which) -> requestPermissions(new String[]{
-                                Manifest.permission.BLUETOOTH_CONNECT,
-                                Manifest.permission.BLUETOOTH_SCAN
-                        }, PERMISSION_REQUEST_BLUETOOTH))
-                        .setNegativeButton(R.string.deny, (dialog, which) -> finish())
-                        .setOnCancelListener(dialog -> finish())
-                        .show();
-            } else {
-                this.requestPermissions(new String[]{
-                        Manifest.permission.BLUETOOTH_CONNECT,
-                        Manifest.permission.BLUETOOTH_SCAN
-                }, PERMISSION_REQUEST_BLUETOOTH);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (this.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED || this.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                if (this.shouldShowRequestPermissionRationale(Manifest.permission.BLUETOOTH_CONNECT)) {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.need_location_access)
+                            .setMessage(R.string.please_allow_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> requestPermissions(new String[]{
+                                    Manifest.permission.BLUETOOTH_CONNECT,
+                                    Manifest.permission.BLUETOOTH_SCAN
+                            }, PERMISSION_REQUEST_BLUETOOTH))
+                            .setNegativeButton(R.string.deny, (dialog, which) -> finish())
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
+                } else {
+                    this.requestPermissions(new String[]{
+                            Manifest.permission.BLUETOOTH_CONNECT,
+                            Manifest.permission.BLUETOOTH_SCAN
+                    }, PERMISSION_REQUEST_BLUETOOTH);
+                }
+                return false;
             }
-            return false;
-        } else {
-            return true;
         }
+        return true;
     }
 
     private void setButtonDefaultUrl() {
@@ -204,7 +206,7 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     private void bluetoothConnect() {
-        if (!connector.connect() && connecting){
+        if (!connector.connect() && connecting) {
             bluetoothConnect();
             return;
         }
@@ -414,7 +416,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void userSelect(String criteria) {
             Log.d(TAG, "userSelect: " + criteria);
-            if(connector!= null) {
+            if (connector != null) {
                 if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                     connector.disconnect();
                 }
@@ -432,7 +434,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void userSelect(String criteria, int timeout) {
             Log.d(TAG, "userSelect: " + criteria);
-            if(connector!= null) {
+            if (connector != null) {
                 if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                     connector.disconnect();
                 }
@@ -451,7 +453,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void autoSelect(String criteria, int scan_period, int timeout) {
             Log.d(TAG, "autoSelect: " + criteria);
-            if(connector!= null) {
+            if (connector != null) {
                 if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                     connector.disconnect();
                 }
@@ -642,7 +644,7 @@ public class ActivityControl extends AppCompatActivity {
         }
 
         @JavascriptInterface
-        public void open(String url){
+        public void open(String url) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(browserIntent);
         }
@@ -651,42 +653,45 @@ public class ActivityControl extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_FINE_LOCATION) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if(permissionAccessFineLocationGuaranteed()) {
-                    setWebView();
-                    setBroadcastReceiver();
-                    setButtonDefaultUrl();
-                }
+        switch (requestCode) {
+            case PERMISSION_REQUEST_FINE_LOCATION:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (permissionBluetoothConnectGuaranteed()) {
+                        setWebView();
+                        setBroadcastReceiver();
+                        setButtonDefaultUrl();
+                    }
 
-            } else {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.limited_functionality)
-                        .setMessage(R.string.cant_work_without_location_access)
-                        .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                        }, PERMISSION_REQUEST_FINE_LOCATION))
-                        .setOnCancelListener(dialog -> finish())
-                        .show();
-            }
-        } else if (requestCode == PERMISSION_REQUEST_BLUETOOTH){
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if(permissionAccessFineLocationGuaranteed()) {
-                    setWebView();
-                    setBroadcastReceiver();
-                    setButtonDefaultUrl();
+                } else {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.limited_functionality)
+                            .setMessage(R.string.cant_work_without_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                            }, PERMISSION_REQUEST_FINE_LOCATION))
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
                 }
-            } else {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.limited_functionality)
-                        .setMessage(R.string.cant_work_without_location_access)
-                        .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
-                                Manifest.permission.BLUETOOTH_SCAN,
-                                Manifest.permission.BLUETOOTH_CONNECT
-                        }, PERMISSION_REQUEST_BLUETOOTH))
-                        .setOnCancelListener(dialog -> finish())
-                        .show();
-            }
+                break;
+            case PERMISSION_REQUEST_BLUETOOTH:
+                if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) || grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (permissionAccessFineLocationGuaranteed()) {
+                        setWebView();
+                        setBroadcastReceiver();
+                        setButtonDefaultUrl();
+                    }
+                } else {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.limited_functionality)
+                            .setMessage(R.string.cant_work_without_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
+                                    Manifest.permission.BLUETOOTH_SCAN,
+                                    Manifest.permission.BLUETOOTH_CONNECT
+                            }, PERMISSION_REQUEST_BLUETOOTH))
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
+                }
+                break;
         }
     }
 
