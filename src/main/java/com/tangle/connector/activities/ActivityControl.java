@@ -6,6 +6,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
@@ -143,11 +144,10 @@ public class ActivityControl extends AppCompatActivity {
     private void setButtonDefaultUrl() {
         buttonDefaultUrl = findViewById(R.id.button_default_url);
 
-        buttonDefaultUrl.setOnClickListener(v -> {
-            webView.loadUrl(defaultWebUrl);
-        });
+        buttonDefaultUrl.setOnClickListener(v -> webView.loadUrl(defaultWebUrl));
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void setWebView() {
         webView = findViewById(R.id.webView);
 
@@ -305,44 +305,38 @@ public class ActivityControl extends AppCompatActivity {
 
 
     private void bluetoothService() {
-        connector.setChangeStateListener(connectionState -> {
-            runOnUiThread(() -> {
-                switch (connectionState) {
-                    case TangleAndroidConnector.STATE_DISCONNECTED:
-                        Log.d(TAG, "bluetoothService: Disconnected");
-                        if (connecting) {
-                            sendReject("ConnectionFailed");
-                            connecting = false;
-                        } else if (disconnecting) {
-                            webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
-                            sendResolve();
-                            disconnecting = false;
-                        } else {
-                            webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
-                        }
-                        break;
-                    case TangleAndroidConnector.STATE_CONNECTED:
-                        Log.d(TAG, "bluetoothService: Connected");
-                        webView.loadUrl("javascript:window.tangleConnect.emit('#connected');");
-                        if (connecting) {
-                            connecting = false;
-                            sendResolve();
-                        }
-                        break;
-                }
-            });
-        });
+        connector.setChangeStateListener(connectionState -> runOnUiThread(() -> {
+            switch (connectionState) {
+                case TangleAndroidConnector.STATE_DISCONNECTED:
+                    Log.d(TAG, "bluetoothService: Disconnected");
+                    if (connecting) {
+                        sendReject("ConnectionFailed");
+                        connecting = false;
+                    } else if (disconnecting) {
+                        webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
+                        sendResolve();
+                        disconnecting = false;
+                    } else {
+                        webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
+                    }
+                    break;
+                case TangleAndroidConnector.STATE_CONNECTED:
+                    Log.d(TAG, "bluetoothService: Connected");
+                    webView.loadUrl("javascript:window.tangleConnect.emit('#connected');");
+                    if (connecting) {
+                        connecting = false;
+                        sendResolve();
+                    }
+                    break;
+            }
+        }));
 
         connector.setOTAUpdateProgressListener(updateProgress -> {
             if (updateProgress == -1) {
-                runOnUiThread(() -> {
-                    webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'begin');");
-                });
+                runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'begin');"));
             } else {
                 Log.d(TAG, "onOtaUpdateProgress: " + updateProgress);
-                runOnUiThread(() -> {
-                    webView.loadUrl("javascript:window.tangleConnect.emit('ota_progress', " + updateProgress + ");");
-                });
+                runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_progress', " + updateProgress + ");"));
             }
         });
 
@@ -379,15 +373,11 @@ public class ActivityControl extends AppCompatActivity {
                     sendReject("TransmitFailed");
                     break;
                 case TangleAndroidConnector.UPDATE_FIRMWARE_RESOLVE:
-                    runOnUiThread(() -> {
-                        webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'success');");
-                    });
+                    runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'success');"));
                     sendResolve();
                     break;
                 case TangleAndroidConnector.UPDATE_FIRMWARE_REJECT:
-                    runOnUiThread(() -> {
-                        webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'fail');");
-                    });
+                    runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'fail');"));
                     sendReject("UpdateFailed");
                     break;
             }
@@ -570,6 +560,10 @@ public class ActivityControl extends AppCompatActivity {
                 sendReject("DeliverFailed");
                 return;
             }
+            //TODO: delete after debug DEV OPTION
+//            int command_length = command_payload.length;
+//            Toast.makeText(getApplicationContext(), "" + command_length, Toast.LENGTH_LONG).show();
+
             Log.d(TAG, "deliver: " + Functions.logBytes(command_payload));
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.deliver(command_payload);
