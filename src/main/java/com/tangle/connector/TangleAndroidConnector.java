@@ -15,9 +15,6 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-import com.tangle.connector.activities.ActivityControl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -133,12 +130,12 @@ public class TangleAndroidConnector extends Service {
             switch (newState) {
                 case BluetoothProfile.STATE_CONNECTED:
                     mBluetoothGatt = gatt;
-                    Log.i(TAG, "onConnectionStateChange: Connected to GATT server.");
-                    Log.i(TAG, "onConnectionStateChange: Attempting to start service discovery:" + mBluetoothGatt.discoverServices());
+                    Log.d(TAG, "onConnectionStateChange: Connected to GATT server.");
+                    Log.d(TAG, "onConnectionStateChange: Attempting to start service discovery:" + mBluetoothGatt.discoverServices());
                     break;
                 case BluetoothProfile.STATE_DISCONNECTED:
                     setConnectionState(STATE_DISCONNECTED);
-                    Log.i(TAG, "onConnectionStateChange: Disconnected from GATT server.");
+                    Log.d(TAG, "onConnectionStateChange: Disconnected from GATT server.");
                     mBluetoothGatt = gatt;
                     mBluetoothGatt.close();
                     mBluetoothGatt = null;
@@ -267,6 +264,7 @@ public class TangleAndroidConnector extends Service {
         } else {
             try {
                 final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceMacAddress);
+
                 mBluetoothGatt = device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
             } catch (IllegalArgumentException exception) {
                 Log.w(TAG, "Device not found with provided address.");
@@ -358,7 +356,6 @@ public class TangleAndroidConnector extends Service {
     }
 
     public void updateFirmware(byte[] firmware) {
-        //TODO: pokud některá část selže zastavit i zbytek.
         final int FLAG_OTA_BEGIN = 255;
         final int FLAG_OTA_WRITE = 0;
         final int FLAG_OTA_END = 254;
@@ -368,14 +365,14 @@ public class TangleAndroidConnector extends Service {
         otaUpdateFailed = false;
         otaUpdateEnd = false;
 
-        Log.i(TAG, "writeFirmware: OTA UPDATE");
-        Log.i(TAG, "writeFirmware: firmware");
+        Log.d(TAG, "writeFirmware: OTA UPDATE");
+        Log.d(TAG, "writeFirmware: firmware");
         communicationType = COMMUNICATION_TYPE_UPDATE_FIRMWARE;
         otaUpdateProgressListener.onOTAUpdateProgressChange(-1); // ota_status = begin
 
         //===========// RESET //===========//
         mAsyncWriteReadThread.mHandler.post(() -> {
-            Log.i(TAG, "writeFirmware: OTA RESET");
+            Log.d(TAG, "writeFirmware: OTA RESET");
 
             if (!isDataSent) {
                 pauseThread();
@@ -411,7 +408,7 @@ public class TangleAndroidConnector extends Service {
                 e.printStackTrace();
             }
 
-            Log.i(TAG, "writeFirmware: OTA BEGIN");
+            Log.d(TAG, "writeFirmware: OTA BEGIN");
 
             if (!isDataSent) {
                 pauseThread();
@@ -450,7 +447,7 @@ public class TangleAndroidConnector extends Service {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            Log.i(TAG, "writeFirmware: OTA WRITE");
+            Log.d(TAG, "writeFirmware: OTA WRITE");
 
 
             while (writtenUpdate < firmware.length) {
@@ -489,7 +486,7 @@ public class TangleAndroidConnector extends Service {
                 if (otaUpdateProgressListener != null)
                     otaUpdateProgressListener.onOTAUpdateProgressChange(updateProgress);
 
-                Log.i(TAG, "writeFirmware: " + updateProgress + "%");
+                Log.d(TAG, "writeFirmware: " + updateProgress + "%");
 
                 indexFrom += data_size;
                 indexTo = indexFrom + data_size;
@@ -504,7 +501,7 @@ public class TangleAndroidConnector extends Service {
                 e.printStackTrace();
             }
 
-            Log.i(TAG, "writeFirmware: OTA END");
+            Log.d(TAG, "writeFirmware: OTA END");
 
             if (!isDataSent) {
                 pauseThread();
@@ -640,10 +637,9 @@ public class TangleAndroidConnector extends Service {
 
         if (connectionState == STATE_CONNECTED) {
             mBluetoothGatt.disconnect();
-        } else {
+        }
             mBluetoothGatt.close();
             mBluetoothGatt = null;
-        }
     }
 
     @Nullable

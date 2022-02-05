@@ -1,5 +1,6 @@
 package com.tangle.connector.activities;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -8,6 +9,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,6 +31,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.airbnb.lottie.LottieAnimationView;
@@ -124,7 +127,7 @@ public class ActivityUserSelect extends AppCompatActivity {
                     if (!criterion.getName().equals("")) {
                         scanFilterBuilder.setDeviceName(criterion.getName());
                     }
-                    if (!criterion.getMacAddress().equals("")){
+                    if (!criterion.getMacAddress().equals("")) {
                         scanFilterBuilder.setDeviceAddress(criterion.getMacAddress());
                     }
                     filters.add(scanFilterBuilder.build());

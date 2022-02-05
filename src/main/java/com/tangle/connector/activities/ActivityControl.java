@@ -19,7 +19,9 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.View;
@@ -43,6 +45,7 @@ public class ActivityControl extends AppCompatActivity {
 
     private static final String TAG = ActivityControl.class.getName();
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
+    private static final int PERMISSION_REQUEST_BLUETOOTH = 2;
     public static final String USER_SELECT_CANCELED_SELECTION = "userSelect -> reject('UserCanceledSelection')";
     public static final String USER_SELECT_FAILED = "userSelect -> reject('SelectionFailed')";
     public static final String USER_SELECT_RESOLVE = "userSelect -> resolve(tangleParameters)";
@@ -64,6 +67,7 @@ public class ActivityControl extends AppCompatActivity {
     private boolean found = false;
     private boolean autoSelectStopped = true;
     private boolean readResponse = false;
+    private boolean disableBackButton = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,22 +80,24 @@ public class ActivityControl extends AppCompatActivity {
 
         Intent intent = getIntent();
         defaultWebUrl = intent.getStringExtra("defaultWebUrl");
+        disableBackButton = intent.getBooleanExtra("disableBackButton", false);
         if (intent.getStringExtra("updaterUrl") != null) {
             setAppUpdater(intent.getStringExtra("updaterUrl"));
         }
 
-
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", defaultWebUrl);
 
-        if (permissionGuaranteed()) {
-            setWebView();
-            setBroadcastReceiver();
-            setButtonDefaultUrl();
+        if (permissionAccessFineLocationGuaranteed()) {
+            if (permissionBluetoothConnectGuaranteed()) {
+                setWebView();
+                setBroadcastReceiver();
+                setButtonDefaultUrl();
+            }
         }
     }
 
-    private boolean permissionGuaranteed() {
+    private boolean permissionAccessFineLocationGuaranteed() {
         if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (this.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -112,6 +118,32 @@ public class ActivityControl extends AppCompatActivity {
         } else {
             return true;
         }
+    }
+
+    private boolean permissionBluetoothConnectGuaranteed() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (this.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED || this.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                if (this.shouldShowRequestPermissionRationale(Manifest.permission.BLUETOOTH_CONNECT)) {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.need_location_access)
+                            .setMessage(R.string.please_allow_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> requestPermissions(new String[]{
+                                    Manifest.permission.BLUETOOTH_CONNECT,
+                                    Manifest.permission.BLUETOOTH_SCAN
+                            }, PERMISSION_REQUEST_BLUETOOTH))
+                            .setNegativeButton(R.string.deny, (dialog, which) -> finish())
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
+                } else {
+                    this.requestPermissions(new String[]{
+                            Manifest.permission.BLUETOOTH_CONNECT,
+                            Manifest.permission.BLUETOOTH_SCAN
+                    }, PERMISSION_REQUEST_BLUETOOTH);
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     private void setButtonDefaultUrl() {
@@ -176,7 +208,7 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     private void bluetoothConnect() {
-        if (!connector.connect()) {
+        if (!connector.connect() && connecting) {
             bluetoothConnect();
             return;
         }
@@ -512,8 +544,9 @@ public class ActivityControl extends AppCompatActivity {
                 disconnecting = true;
                 connector.disconnect();
                 return;
+            } else {
+                sendResolve();
             }
-            sendResolve();
         }
 
         @JavascriptInterface
@@ -623,24 +656,45 @@ public class ActivityControl extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_FINE_LOCATION) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "coarse location permission granted");
+        switch (requestCode) {
+            case PERMISSION_REQUEST_FINE_LOCATION:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (permissionBluetoothConnectGuaranteed()) {
+                        setWebView();
+                        setBroadcastReceiver();
+                        setButtonDefaultUrl();
+                    }
 
-                setWebView();
-                setBroadcastReceiver();
-                setButtonDefaultUrl();
-
-            } else {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.limited_functionality)
-                        .setMessage(R.string.cant_work_without_location_access)
-                        .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                        }, PERMISSION_REQUEST_FINE_LOCATION))
-                        .setOnCancelListener(dialog -> finish())
-                        .show();
-            }
+                } else {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.limited_functionality)
+                            .setMessage(R.string.cant_work_without_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                            }, PERMISSION_REQUEST_FINE_LOCATION))
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
+                }
+                break;
+            case PERMISSION_REQUEST_BLUETOOTH:
+                if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) || grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (permissionAccessFineLocationGuaranteed()) {
+                        setWebView();
+                        setBroadcastReceiver();
+                        setButtonDefaultUrl();
+                    }
+                } else {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.limited_functionality)
+                            .setMessage(R.string.cant_work_without_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
+                                    Manifest.permission.BLUETOOTH_SCAN,
+                                    Manifest.permission.BLUETOOTH_CONNECT
+                            }, PERMISSION_REQUEST_BLUETOOTH))
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
+                }
+                break;
         }
     }
 
@@ -695,26 +749,58 @@ public class ActivityControl extends AppCompatActivity {
         }
     }
 
+
     @Override
-    protected void onStop() {
-        mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
-        super.onStop();
+    protected void onStart() {
+        super.onStart();
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
+    protected void onResume() {
+        super.onResume();
+//        webView.resumeTimers();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+//        webView.pauseTimers();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
     }
 
     @Override
     public void onBackPressed() {
-//        super.onBackPressed();
+        if (!disableBackButton) {
+            if (webView.getUrl().equals(defaultWebUrl)) {
+                super.onBackPressed();
+            } else if (webView.canGoBack()) {
+                webView.goBack();
+            } else {
+                webView.loadUrl(defaultWebUrl);
+            }
+        }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
     }
 
     @Override
     protected void onDestroy() {
         if (connector != null) {
             connector.disconnect();
+            connector = null;
         }
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         super.onDestroy();
