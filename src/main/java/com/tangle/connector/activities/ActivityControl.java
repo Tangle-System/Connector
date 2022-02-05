@@ -148,7 +148,6 @@ public class ActivityControl extends AppCompatActivity {
 
     private void setButtonDefaultUrl() {
         buttonDefaultUrl = findViewById(R.id.button_default_url);
-
         buttonDefaultUrl.setOnClickListener(v -> webView.loadUrl(defaultWebUrl));
     }
 
