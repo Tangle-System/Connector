@@ -67,6 +67,7 @@ public class ActivityControl extends AppCompatActivity {
     private boolean found = false;
     private boolean autoSelectStopped = true;
     private boolean readResponse = false;
+    private boolean disableBackButton = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +80,7 @@ public class ActivityControl extends AppCompatActivity {
 
         Intent intent = getIntent();
         defaultWebUrl = intent.getStringExtra("defaultWebUrl");
+        disableBackButton = intent.getBooleanExtra("disableBackButton", false);
         if (intent.getStringExtra("updaterUrl") != null) {
             setAppUpdater(intent.getStringExtra("updaterUrl"));
         }
@@ -543,8 +545,9 @@ public class ActivityControl extends AppCompatActivity {
                 disconnecting = true;
                 connector.disconnect();
                 return;
+            } else {
+                sendResolve();
             }
-            sendResolve();
         }
 
         @JavascriptInterface
@@ -769,15 +772,19 @@ public class ActivityControl extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
-        if (connector != null) {
-            connector.disconnect();
-            connector = null;
-        }
     }
 
     @Override
     public void onBackPressed() {
-//        super.onBackPressed();
+        if (!disableBackButton) {
+            if (webView.getUrl().equals(defaultWebUrl)) {
+                super.onBackPressed();
+            } else if (webView.canGoBack()) {
+                webView.goBack();
+            } else {
+                webView.loadUrl(defaultWebUrl);
+            }
+        }
     }
 
     @Override
@@ -792,7 +799,11 @@ public class ActivityControl extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        if (connector != null) {
+            connector.disconnect();
+            connector = null;
+        }
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        super.onDestroy();
     }
 }
