@@ -21,6 +21,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.View;
@@ -746,15 +747,32 @@ public class ActivityControl extends AppCompatActivity {
         }
     }
 
+
     @Override
-    protected void onStop() {
-        mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
-        super.onStop();
+    protected void onStart() {
+        super.onStart();
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
+    protected void onResume() {
+        super.onResume();
+//        webView.resumeTimers();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+//        webView.pauseTimers();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
+        if (connector != null) {
+            connector.disconnect();
+            connector = null;
+        }
     }
 
     @Override
@@ -763,11 +781,18 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+    }
+
+    @Override
     protected void onDestroy() {
-        if (connector != null) {
-            connector.disconnect();
-        }
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         super.onDestroy();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
     }
 }
