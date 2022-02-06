@@ -53,15 +53,17 @@ public class BleScanner {
 
             try {
                 for (TangleParameters criterion : criteria) {
-                    ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
-                            .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
-                    if (!criterion.getName().equals("")) {
-                        scanFilterBuilder.setDeviceName(criterion.getName());
+                    if(!criterion.isLegacy()) {
+                        ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
+                                .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
+                        if (!criterion.getName().equals("")) {
+                            scanFilterBuilder.setDeviceName(criterion.getName());
+                        }
+                        if (!criterion.getMacAddress().equals("")) {
+                            scanFilterBuilder.setDeviceAddress(criterion.getMacAddress());
+                        }
+                        filters.add(scanFilterBuilder.build());
                     }
-                    if (!criterion.getMacAddress().equals("")){
-                        scanFilterBuilder.setDeviceAddress(criterion.getMacAddress());
-                    }
-                    filters.add(scanFilterBuilder.build());
                 }
             } catch (IOException e) {
                 Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
