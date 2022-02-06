@@ -23,6 +23,7 @@ public class TangleParameters implements Parcelable {
     private String macAddress = "";
     private int productCode;
     private boolean adoptionFlag;
+    private boolean legacy = false;
 
     private ByteArrayOutputStream manufactureDataFilter;
 
@@ -137,6 +138,10 @@ public class TangleParameters implements Parcelable {
         this.adoptionFlag = adoptionFlag;
     }
 
+    public boolean isLegacy() {
+        return legacy;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -164,7 +169,6 @@ public class TangleParameters implements Parcelable {
             return new TangleParameters[size];
         }
     };
-
 
     private static class Compiler {
 
