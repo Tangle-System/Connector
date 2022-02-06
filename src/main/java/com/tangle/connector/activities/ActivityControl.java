@@ -16,6 +16,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -157,6 +158,7 @@ public class ActivityControl extends AppCompatActivity {
         webView = findViewById(R.id.webView);
 
         webView.setWebViewClient(new WebViewClient());
+        webView.setBackgroundColor(Color.BLACK);
         WebSettings webSettings = webView.getSettings();
 
         webSettings.setAppCachePath(getApplicationContext().getCacheDir().getAbsolutePath());
