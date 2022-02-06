@@ -777,12 +777,10 @@ public class ActivityControl extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if (!disableBackButton) {
-            if (webView.getUrl().equals(defaultWebUrl)) {
-                super.onBackPressed();
-            } else if (webView.canGoBack()) {
+            if (webView.canGoBack()) {
                 webView.goBack();
             } else {
-                webView.loadUrl(defaultWebUrl);
+                super.onBackPressed();
             }
         }
     }
