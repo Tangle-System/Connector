@@ -42,7 +42,7 @@ public class BleScanner {
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
             ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
-            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID));
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
             filters.add(scanFilterBuilder.build());
         } else {
             Gson gson = new Gson();
@@ -50,24 +50,12 @@ public class BleScanner {
             }.getType();
             TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
 
-
-            try {
-                for (TangleParameters criterion : criteria) {
-                    if(!criterion.isLegacy()) {
-                        ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
-                                .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
-                        if (!criterion.getName().equals("")) {
-                            scanFilterBuilder.setDeviceName(criterion.getName());
-                        }
-                        if (!criterion.getMacAddress().equals("")) {
-                            scanFilterBuilder.setDeviceAddress(criterion.getMacAddress());
-                        }
-                        filters.add(scanFilterBuilder.build());
-                    }
+            for (TangleParameters criterion : criteria) {
+                if (!criterion.isLegacy()) {
+                    criterion.getManufactureDataFilters(filters);
                 }
-            } catch (IOException e) {
-                Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
             }
+
         }
     }
 
@@ -91,9 +79,9 @@ public class BleScanner {
                 bluetoothLeScanner.stopScan(leScanCallback);
 
                 results.sort((lhs, rhs) -> Integer.compare(rhs.getRssi(), lhs.getRssi()));
-                if(!results.isEmpty()){
+                if (!results.isEmpty()) {
                     nearestDeviceListener.nearestDeviceChange(results.get(0));
-                } else{
+                } else {
                     nearestDeviceListener.nearestDeviceChange(null);
                 }
 
@@ -113,10 +101,11 @@ public class BleScanner {
             bluetoothLeScanner.stopScan(leScanCallback);
         }
     }
-    public ScanResult stopScan(){
+
+    public ScanResult stopScan() {
         bluetoothLeScanner.stopScan(leScanCallback);
         results.sort((lhs, rhs) -> Integer.compare(rhs.getRssi(), lhs.getRssi()));
-        if (results.isEmpty()){
+        if (results.isEmpty()) {
             return null;
         } else {
             return results.get(0);
