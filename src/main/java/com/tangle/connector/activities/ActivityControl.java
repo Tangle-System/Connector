@@ -22,7 +22,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.View;
@@ -74,6 +73,8 @@ public class ActivityControl extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
+
+        //TODO: Vytvořit statickou funkci, která spouší Connector s parametrama. Jako jsou: defaultWeb, appUpdater, deactivateBackButton, HideSystemUI and screenOrientation.
         hideSystemUI();
         onChangeVisibility();
 
@@ -181,6 +182,8 @@ public class ActivityControl extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 TransitionManager.beginDelayedTransition(layoutActivityControl);
+
+                // Show home button if website isn't the default webSite
                 if (!url.equals(defaultWebUrl)) {
                     buttonDefaultUrl.setVisibility(View.VISIBLE);
                 } else
@@ -196,7 +199,9 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     public void setAppUpdater(String url) {
+        //TODO: Předělat screen orientation pomocí funkce volající Connector (nastavení dle vložených parametrů).
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
         AppUpdater appUpdater = new AppUpdater(this);
         appUpdater.setUpdateFrom(UpdateFrom.JSON)
                 .setUpdateJSON(url)
@@ -212,74 +217,9 @@ public class ActivityControl extends AppCompatActivity {
     private void bluetoothConnect() {
         if (!connector.connect() && connecting) {
             bluetoothConnect();
-            return;
+        } else {
+            setConnectorServices();
         }
-        bluetoothService();
-    }
-
-    private void sendResolveNull() {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.resolve(null);");
-            webView.loadUrl("javascript:window.tangleConnect.resolve(null);");
-        });
-    }
-
-    private void sendResolve() {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.resolve();");
-            webView.loadUrl("javascript:window.tangleConnect.resolve();");
-        });
-    }
-
-    private void sendResolve(String data) {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.resolve('" + data.replaceAll("'", "\\'") + "');");
-            webView.loadUrl("javascript:window.tangleConnect.resolve('" + data.replaceAll("'", "\\'") + "');");
-        });
-
-    }
-
-    private void sendResolve(int data) {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.resolve(" + data + ");");
-            webView.loadUrl("javascript:window.tangleConnect.resolve(" + data + ");");
-        });
-    }
-
-    private void sendResolve(byte[] data) {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.resolve(" + Functions.logBytes(data) + ");");
-            webView.loadUrl("javascript:window.tangleConnect.resolve(" + Functions.logBytes(data) + ");");
-        });
-    }
-
-    private void sendReject() {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.reject();");
-            webView.loadUrl("javascript:window.tangleConnect.reject();");
-        });
-    }
-
-    private void sendReject(String data) {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.reject('" + data.replaceAll("'", "\\'") + "');");
-            webView.loadUrl("javascript:window.tangleConnect.reject('" + data.replaceAll("'", "\\'") + "');");
-        });
-
-    }
-
-    private void sendReject(int data) {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.reject(" + data + ");");
-            webView.loadUrl("javascript:window.tangleConnect.reject(" + data + ");");
-        });
-    }
-
-    private void sendReject(byte[] data) {
-        runOnUiThread(() -> {
-            Log.d(TAG, "javascript:window.tangleConnect.reject(" + Functions.logBytes(data) + ");");
-            webView.loadUrl("javascript:window.tangleConnect.reject(" + Functions.logBytes(data) + ");");
-        });
     }
 
     private void setBroadcastReceiver() {
@@ -310,19 +250,19 @@ public class ActivityControl extends AppCompatActivity {
     }
 
 
-    private void bluetoothService() {
+    private void setConnectorServices() {
         connector.setChangeStateListener(connectionState -> runOnUiThread(() -> {
             switch (connectionState) {
                 case TangleAndroidConnector.STATE_DISCONNECTED:
                     Log.d(TAG, "bluetoothService: Disconnected");
-                    if (connecting) {
+                    if (connecting) { // App state connecting
                         sendReject("ConnectionFailed");
                         connecting = false;
-                    } else if (disconnecting) {
+                    } else if (disconnecting) { // App state disconnecting
                         webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
                         sendResolve();
                         disconnecting = false;
-                    } else {
+                    } else { // App state running
                         webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
                     }
                     break;
@@ -407,6 +347,194 @@ public class ActivityControl extends AppCompatActivity {
         } else {
             sendReject("SelectionFailed");
         }
+    }
+
+    private void sendResolveNull() {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.resolve(null);");
+            webView.loadUrl("javascript:window.tangleConnect.resolve(null);");
+        });
+    }
+
+    private void sendResolve() {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.resolve();");
+            webView.loadUrl("javascript:window.tangleConnect.resolve();");
+        });
+    }
+
+    private void sendResolve(String data) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.resolve('" + data.replaceAll("'", "\\'") + "');");
+            webView.loadUrl("javascript:window.tangleConnect.resolve('" + data.replaceAll("'", "\\'") + "');");
+        });
+
+    }
+
+    private void sendResolve(int data) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.resolve(" + data + ");");
+            webView.loadUrl("javascript:window.tangleConnect.resolve(" + data + ");");
+        });
+    }
+
+    private void sendResolve(byte[] data) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.resolve(" + Functions.logBytes(data) + ");");
+            webView.loadUrl("javascript:window.tangleConnect.resolve(" + Functions.logBytes(data) + ");");
+        });
+    }
+
+    private void sendReject() {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.reject();");
+            webView.loadUrl("javascript:window.tangleConnect.reject();");
+        });
+    }
+
+    private void sendReject(String data) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.reject('" + data.replaceAll("'", "\\'") + "');");
+            webView.loadUrl("javascript:window.tangleConnect.reject('" + data.replaceAll("'", "\\'") + "');");
+        });
+
+    }
+
+    private void sendReject(int data) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.reject(" + data + ");");
+            webView.loadUrl("javascript:window.tangleConnect.reject(" + data + ");");
+        });
+    }
+
+    private void sendReject(byte[] data) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "javascript:window.tangleConnect.reject(" + Functions.logBytes(data) + ");");
+            webView.loadUrl("javascript:window.tangleConnect.reject(" + Functions.logBytes(data) + ");");
+        });
+    }
+
+    private void hideSystemUI() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+    }
+
+    public void onChangeVisibility() {
+        View decorView = getWindow().getDecorView();
+        decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
+            // Note that system bars will only be "visible" if none of the
+            // LOW_PROFILE, HIDE_NAVIGATION, or FULLSCREEN flags are set.
+            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                Log.d(TAG, "hideSystemUI: visible");
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(2500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    runOnUiThread(this::hideSystemUI);
+                }).start();
+                // adjustments to your UI, such as showing the action bar or
+                // other navigational controls.
+            } else {
+                Log.d(TAG, "hideSystemUI: invisible");
+                // adjustments to your UI, such as hiding the action bar or
+                // other navigational controls.
+            }
+        });
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            hideSystemUI();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case PERMISSION_REQUEST_FINE_LOCATION:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (permissionBluetoothConnectGuaranteed()) {
+                        setWebView();
+                        setBroadcastReceiver();
+                        setButtonDefaultUrl();
+                    }
+
+                } else {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.limited_functionality)
+                            .setMessage(R.string.cant_work_without_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                            }, PERMISSION_REQUEST_FINE_LOCATION))
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
+                }
+                break;
+            case PERMISSION_REQUEST_BLUETOOTH:
+                if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) || grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (permissionAccessFineLocationGuaranteed()) {
+                        setWebView();
+                        setBroadcastReceiver();
+                        setButtonDefaultUrl();
+                    }
+                } else {
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.limited_functionality)
+                            .setMessage(R.string.cant_work_without_location_access)
+                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
+                                    Manifest.permission.BLUETOOTH_SCAN,
+                                    Manifest.permission.BLUETOOTH_CONNECT
+                            }, PERMISSION_REQUEST_BLUETOOTH))
+                            .setOnCancelListener(dialog -> finish())
+                            .show();
+                }
+                break;
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!disableBackButton) {
+            if (webView.canGoBack()) {
+                webView.goBack();
+            } else {
+                super.onBackPressed();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (connector != null) {
+            connector.disconnect();
+            connector = null;
+        }
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        super.onDestroy();
     }
 
     public class JavascriptHandler {
@@ -545,7 +673,6 @@ public class ActivityControl extends AppCompatActivity {
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 disconnecting = true;
                 connector.disconnect();
-                return;
             } else {
                 sendResolve();
             }
@@ -567,9 +694,6 @@ public class ActivityControl extends AppCompatActivity {
                 sendReject("DeliverFailed");
                 return;
             }
-            //TODO: delete after debug DEV OPTION
-//            int command_length = command_payload.length;
-//            Toast.makeText(getApplicationContext(), "" + command_length, Toast.LENGTH_LONG).show();
 
             Log.d(TAG, "deliver: " + Functions.logBytes(command_payload));
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
@@ -653,156 +777,5 @@ public class ActivityControl extends AppCompatActivity {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(browserIntent);
         }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_REQUEST_FINE_LOCATION:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (permissionBluetoothConnectGuaranteed()) {
-                        setWebView();
-                        setBroadcastReceiver();
-                        setButtonDefaultUrl();
-                    }
-
-                } else {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle(R.string.limited_functionality)
-                            .setMessage(R.string.cant_work_without_location_access)
-                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
-                                    Manifest.permission.ACCESS_FINE_LOCATION
-                            }, PERMISSION_REQUEST_FINE_LOCATION))
-                            .setOnCancelListener(dialog -> finish())
-                            .show();
-                }
-                break;
-            case PERMISSION_REQUEST_BLUETOOTH:
-                if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) || grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (permissionAccessFineLocationGuaranteed()) {
-                        setWebView();
-                        setBroadcastReceiver();
-                        setButtonDefaultUrl();
-                    }
-                } else {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle(R.string.limited_functionality)
-                            .setMessage(R.string.cant_work_without_location_access)
-                            .setPositiveButton(R.string.accept, (dialog, which) -> this.requestPermissions(new String[]{
-                                    Manifest.permission.BLUETOOTH_SCAN,
-                                    Manifest.permission.BLUETOOTH_CONNECT
-                            }, PERMISSION_REQUEST_BLUETOOTH))
-                            .setOnCancelListener(dialog -> finish())
-                            .show();
-                }
-                break;
-        }
-    }
-
-    private void hideSystemUI() {
-        // Enables regular immersive mode.
-        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
-        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
-
-    }
-
-    public void onChangeVisibility() {
-        View decorView = getWindow().getDecorView();
-        decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
-            // Note that system bars will only be "visible" if none of the
-            // LOW_PROFILE, HIDE_NAVIGATION, or FULLSCREEN flags are set.
-            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-                Log.d(TAG, "hideSystemUI: visible");
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(2500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    runOnUiThread(this::hideSystemUI);
-                }).start();
-                // adjustments to your UI, such as showing the action bar or
-                // other navigational controls.
-            } else {
-                Log.d(TAG, "hideSystemUI: invisible");
-                // adjustments to your UI, such as hiding the action bar or
-                // other navigational controls.
-            }
-        });
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            hideSystemUI();
-        }
-    }
-
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-//        webView.resumeTimers();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-//        webView.pauseTimers();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (!disableBackButton) {
-            if (webView.canGoBack()) {
-                webView.goBack();
-            } else {
-                super.onBackPressed();
-            }
-        }
-    }
-
-    @Override
-    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-    }
-
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
-        super.onSaveInstanceState(outState, outPersistentState);
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (connector != null) {
-            connector.disconnect();
-            connector = null;
-        }
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
-        super.onDestroy();
     }
 }
