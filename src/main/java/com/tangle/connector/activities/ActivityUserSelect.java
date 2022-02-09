@@ -110,9 +110,8 @@ public class ActivityUserSelect extends AppCompatActivity {
         SCAN_PERIOD = intent.getIntExtra("timeout", 5000);
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
-            ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
-
+            ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
             filters.add(scanFilterBuilder.build());
         } else {
             Gson gson = new Gson();
@@ -120,22 +119,11 @@ public class ActivityUserSelect extends AppCompatActivity {
             }.getType();
             TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
 
-            try {
-                for (TangleParameters criterion : criteria) {
-                    if(!criterion.isLegacy()) {
-                        ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder()
-                                .setManufacturerData(0x02e5, criterion.getManufactureDataFilter(), criterion.getManufactureDataMask());
-                        if (!criterion.getName().equals("")) {
-                            scanFilterBuilder.setDeviceName(criterion.getName());
-                        }
-                        if (!criterion.getMacAddress().equals("")) {
-                            scanFilterBuilder.setDeviceAddress(criterion.getMacAddress());
-                        }
-                        filters.add(scanFilterBuilder.build());
-                    }
+
+            for (TangleParameters criterion : criteria) {
+                if (!criterion.isLegacy()) {
+                    criterion.getManufactureDataFilters(filters);
                 }
-            } catch (IOException e) {
-                Log.d(TAG, "setFilter: Failed to compile manufactureDataFilter" + e);
             }
         }
     }

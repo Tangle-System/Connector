@@ -1,33 +1,34 @@
 package com.tangle.connector;
 
+import android.bluetooth.le.ScanFilter;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import com.airbnb.lottie.parser.IntegerParser;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TangleParameters implements Parcelable {
-    private final static String TAG = TangleParameters.class.getName();
+    private final String TAG = TangleParameters.class.getName();
 
     private String name = "";
     private String namePrefix = "";
     private String ownerSignature = "";
-    private String fwVersion = "";
+    private String fwVersion="";
     private String macAddress = "";
-    private int productCode;
-    private boolean adoptionFlag;
+    private int productCode = -1;
+    private boolean adoptionFlag = false;
     private boolean legacy = false;
 
-    private ByteArrayOutputStream manufactureDataFilter;
+    private byte[] manufactureDataFilter;
+    private byte[] manufactureDataMask;
 
-    private ByteArrayOutputStream manufactureDataMask;
+    private ScanFilter.Builder scanFilterBuilder;
 
     public TangleParameters() {
     }
@@ -40,45 +41,39 @@ public class TangleParameters implements Parcelable {
         macAddress = in.readString();
         productCode = in.readInt();
         adoptionFlag = in.readByte() != 0;
-    }
-
-    private void compileManufactureData() throws IOException {
-        manufactureDataFilter = new ByteArrayOutputStream();
-        manufactureDataMask = new ByteArrayOutputStream();
-
-        Compiler.compileFWVersion(fwVersion, manufactureDataFilter, manufactureDataMask);
-        Compiler.compileProductCode(productCode, manufactureDataFilter, manufactureDataMask);
-        Compiler.compileOwnerSignatureKey(ownerSignature, manufactureDataFilter, manufactureDataMask);
-        Compiler.compileAdoptionFlag(adoptionFlag, manufactureDataFilter, manufactureDataMask);
+        legacy = in.readByte() != 0;
     }
 
     public void parseManufactureData(byte[] manufactureData) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         buffer.write(manufactureData, 0, 2);
-        fwVersion = Compiler.parseFwVersion(buffer.toByteArray());
+        fwVersion = parseFwVersion(buffer.toByteArray());
         buffer.reset();
         buffer.write(manufactureData, 2, 2);
-        productCode = Compiler.parseProductCode(buffer.toByteArray());
+        productCode = parseProductCode(buffer.toByteArray());
         buffer.reset();
         buffer.write(manufactureData, 4, 16);
-        ownerSignature = Compiler.parseOwnerSignatureKey(buffer.toByteArray());
-        adoptionFlag = Compiler.parseAdoptingFlag(manufactureData[20]);
-
+        ownerSignature = parseOwnerSignatureKey(buffer.toByteArray());
+        adoptionFlag = parseAdoptingFlag(manufactureData[20]);
     }
 
-    //TODO: Nevracet pole bytů ale přidat do odkazu na pole filtrů další filtry
-    public byte[] getManufactureDataFilter() throws IOException {
-        if (manufactureDataFilter == null) {
-            compileManufactureData();
-        }
-        return manufactureDataFilter.toByteArray();
-    }
+    public void getManufactureDataFilters(ArrayList<ScanFilter> filters){
 
-    public byte[] getManufactureDataMask() throws IOException {
-        if (manufactureDataMask == null) {
-            compileManufactureData();
+        manufactureDataFilter = new byte[21];
+        manufactureDataMask = new byte[21];
+        scanFilterBuilder = new ScanFilter.Builder();
+
+        if(!name.equals("")){
+            scanFilterBuilder.setDeviceName(name);
         }
-        return manufactureDataMask.toByteArray();
+        if (!macAddress.equals("")) {
+            scanFilterBuilder.setDeviceAddress(macAddress);
+        }
+        compileProductCode();
+        compileOwnerSignatureKey();
+        compileAdoptionFlag();
+        compileFWVersion(filters);
+
     }
 
     public String getName() {
@@ -91,51 +86,6 @@ public class TangleParameters implements Parcelable {
 
     public String getMacAddress() {
         return macAddress;
-    }
-
-    public void setMacAddress(String macAddress) {
-        this.macAddress = macAddress;
-    }
-
-    public String getNamePrefix() {
-        return namePrefix;
-    }
-
-    public void setNamePrefix(String namePrefix) {
-        this.namePrefix = namePrefix;
-    }
-
-    public String getOwnerSignature() {
-        return ownerSignature;
-    }
-
-    public void setOwnerSignature(String ownerSignature) {
-        this.ownerSignature = ownerSignature;
-    }
-
-    public String getFwVersion() {
-        return fwVersion;
-    }
-
-    public void setFwVersion(String fwVersion) {
-        this.fwVersion = fwVersion;
-    }
-
-    public int getProductCode() {
-        return productCode;
-    }
-
-    public void setProductCode(int productCode) {
-        this.productCode = productCode;
-    }
-
-    public boolean isAdoptionFlag() {
-        return adoptionFlag;
-
-    }
-
-    public void setAdoptionFlag(boolean adoptionFlag) {
-        this.adoptionFlag = adoptionFlag;
     }
 
     public boolean isLegacy() {
@@ -156,9 +106,10 @@ public class TangleParameters implements Parcelable {
         dest.writeString(macAddress);
         dest.writeInt(productCode);
         dest.writeByte((byte) (adoptionFlag ? 1 : 0));
+        dest.writeByte((byte) (legacy ? 1 : 0));
     }
 
-    public static final Creator<TangleParameters> CREATOR = new Creator<TangleParameters>() {
+    public static final Creator<TangleParameters> CREATOR = new Creator<>() {
         @Override
         public TangleParameters createFromParcel(Parcel in) {
             return new TangleParameters(in);
@@ -170,131 +121,143 @@ public class TangleParameters implements Parcelable {
         }
     };
 
-    private static class Compiler {
+    // Filters compilation
 
-        // 0-2 verze firmwaru
-        // 2-4 product code
-        // 4-20 owner signature
-        // 21 adoptionFlag flas 0 = neadoptuje 1 = adotptuje
+    // 0-1 firmware version (2 bytes)
+    // 2-3 product code (2 bytes)
+    // 4-19 owner signature (16 bytes)
+    // 20 adoptionFlag: false-0 = do not adopting; true-1 = adopting (1 byte)
 
-        private static void compileFWVersion(String fwVersion, ByteArrayOutputStream manufactureDataFilter, ByteArrayOutputStream manufactureDataMask) throws IOException {
+    private void compileFWVersion(ArrayList<ScanFilter> filters) {
+        final int byteOffset = 0;
+        if (!fwVersion.equals("")) {
+            Pattern p = Pattern.compile("(!?)([\\d]?).([\\d]+).([\\d]+)");
+            Matcher m = p.matcher(fwVersion);
 
-            if (fwVersion != null) {
-                Pattern p = Pattern.compile("(!?)([\\d]?).([\\d]+).([\\d]+)");
-                Matcher m = p.matcher(fwVersion);
+            if (m.find()) {
+                int versionCode;
+                versionCode = groupToInt(m.group(2)) * 10000;
+                versionCode += groupToInt(m.group(3)) * 100;
+                versionCode += groupToInt(m.group(4));
 
-                if (m.find()) {
-                    int versionCode = 0;
-                    versionCode = groupToInt(m.group(2)) * 10000;
-                    versionCode += groupToInt(m.group(3)) * 100;
-                    versionCode += groupToInt(m.group(4));
+                if (Objects.requireNonNull(m.group(1)).equals("!")) {
+                    // filter all device with different Fw version.
+                    // we will generate 16 filters, each filtering one of the 16 bits that is different from my version.
+                    // if the one bit is different, then the version of the found device is different than mine.
 
-                    if (Objects.requireNonNull(m.group(1)).equals("!")) {
-                        //TODO: compile fww version reverse filter ( vyfiltruj vsechnz verze kromne te co je vzbrana)
-//                        for (int i = 0; i < 2; i++) {
-//                            for (int j = 0; j < 8; j++) {
-//                                for (int k = 0; k < 2; k++) {
-//
-//                                }
-//                            }
-//                        }
-                    } else {
-                        manufactureDataFilter.write(Functions.integerToBytes(versionCode, 2));
-                        manufactureDataMask.write(Functions.integerToBytes(0xffff, 2));
+                    byte[] versionBytes = {(byte) (versionCode & 0xff), (byte) ((versionCode >> 8) & 0xff)};
+
+                    // version is defined as 2 bytes
+                    for (int i = 0; i < 2; i++) {
+                        // each byte have 8 bits
+                        for (int j = 0; j < 8; j++) {
+                            // set bytes to zero
+                            for (int k = 0; k < 2; k++) {
+                                manufactureDataFilter[byteOffset + k] = 0;
+                                manufactureDataMask[byteOffset + k] = 0;
+                            }
+
+                            manufactureDataFilter[byteOffset + i] = (byte) ~(versionBytes[i] & (1 << j));
+                            manufactureDataMask[byteOffset + i] = (byte) (1 << j);
+                            scanFilterBuilder.setManufacturerData(0x02e5, manufactureDataFilter, manufactureDataMask);
+                            filters.add(scanFilterBuilder.build());
+                        }
                     }
+                    return;
                 } else {
-                    manufactureDataFilter.write(Functions.integerToBytes(0, 2));
-                    manufactureDataMask.write(Functions.integerToBytes(0, 2));
-                }
-            } else {
-                manufactureDataFilter.write(Functions.integerToBytes(0, 2));
-                manufactureDataMask.write(Functions.integerToBytes(0, 2));
-            }
-        }
-
-        private static void compileProductCode(int productCode, ByteArrayOutputStream manufactureDataFilter, ByteArrayOutputStream manufactureDataMask) throws IOException {
-            //Compile Product Code
-            if (productCode != 0) {
-                manufactureDataFilter.write(Functions.integerToBytes(productCode, 2));
-                manufactureDataMask.write(Functions.integerToBytes(0xffff, 2));
-            } else {
-                manufactureDataFilter.write(Functions.integerToBytes(0, 2));
-                manufactureDataMask.write(Functions.integerToBytes(0, 2));
-            }
-        }
-
-        private static void compileOwnerSignatureKey(String ownerSignature, ByteArrayOutputStream manufactureDataFilter, ByteArrayOutputStream manufactureDataMask) throws IOException {
-            if (ownerSignature != null) {
-                if (ownerSignature.length() == 32) {
-                    for (int i = 0; i < 32; i = i + 2) {
-                        manufactureDataFilter.write(Integer.parseInt(ownerSignature.substring(i, i + 2), 16));
+                    byte[] versionCodeBytes = Functions.integerToBytes(versionCode, 2);
+                    for (int i = 0; i < 2; i++) {
+                        manufactureDataFilter[byteOffset + i] = versionCodeBytes[i];
+                        manufactureDataMask[byteOffset + i] = (byte) 0xff;
                     }
-                    for (int i = 0; i < 16; i++) {
-                        manufactureDataMask.write((byte) 0xff);
-                    }
-                } else {
-                    manufactureDataFilter.write(Functions.integerToBytes(0, 16));
-                    manufactureDataMask.write(Functions.integerToBytes(0, 16));
                 }
-            } else {
-                manufactureDataFilter.write(Functions.integerToBytes(0, 16));
-                manufactureDataMask.write(Functions.integerToBytes(0, 16));
-
             }
         }
+        scanFilterBuilder.setManufacturerData(0x02e5, manufactureDataFilter, manufactureDataMask);
+        filters.add(scanFilterBuilder.build());
+    }
 
-        private static void compileAdoptionFlag(boolean adoptionFlag, ByteArrayOutputStream manufactureDataFilter, ByteArrayOutputStream manufactureDataMask) {
-            manufactureDataFilter.write(adoptionFlag ? 1 : 0);
-            manufactureDataMask.write(0xff);
-        }
-
-        private static int groupToInt(String group) {
-            if (group == null) {
-                return 0;
+    private void compileProductCode() {
+        final int byteOffset = 2;
+        if (productCode < 0 || productCode > 0xffff) {
+            Log.e(TAG, "compileProductCode: Invalid productCode");
+        } else {
+            byte[] productCodeBytes = Functions.integerToBytes(productCode, 2);
+            for (int i = 0; i < 2; i++) {
+                manufactureDataFilter[byteOffset + i] = productCodeBytes[i];
+                manufactureDataMask[byteOffset + i] = (byte) 0xff;
             }
-            if (group.equals("")) {
-                return 0;
-            } else return Integer.parseInt(group);
-        }
-
-        private static String parseFwVersion(byte[] bytes) {
-            int fwVersionCode = 0;
-
-            ByteBuffer bb = ByteBuffer.wrap(bytes);
-            bb = bb.order(ByteOrder.LITTLE_ENDIAN);
-            while (bb.hasRemaining()) {
-                short s = bb.getShort();
-                fwVersionCode = 0xFFFF & s;
-            }
-            int thousands = fwVersionCode / 1000;
-            int hundreds = (fwVersionCode - thousands) / 100;
-            int dozens = (fwVersionCode - thousands * 1000 - hundreds * 100);
-
-            return "" + thousands + "." + hundreds + "." + dozens;
-        }
-
-        private static int parseProductCode(byte[] bytes) {
-            int productCode = 0;
-
-            ByteBuffer bb = ByteBuffer.wrap(bytes);
-            bb = bb.order(ByteOrder.LITTLE_ENDIAN);
-            while (bb.hasRemaining()) {
-                short s = bb.getShort();
-                productCode = 0xFFFF & s;
-            }
-            return productCode;
-        }
-
-        private static String parseOwnerSignatureKey(byte[] bytes) {
-            StringBuilder ownerSignatureKey = new StringBuilder();
-            for (byte b : bytes) {
-                ownerSignatureKey.append(String.format("%02x", b));
-            }
-            return ownerSignatureKey.toString();
-        }
-
-        private static boolean parseAdoptingFlag(byte b) {
-            return b == 1;
         }
     }
+
+    private void compileOwnerSignatureKey() {
+        final int byteOffset = 4;
+        if (ownerSignature.length() == 32) {
+            for (int i = 0; i < 32; i = i + 2) {
+                manufactureDataFilter[byteOffset + i / 2] = (byte) (Integer.parseInt(ownerSignature.substring(i, i + 2), 16));
+            }
+            for (int i = 0; i < 16; i++) {
+                manufactureDataMask[byteOffset + i] = (byte) 0xff;
+            }
+        } else if (!ownerSignature.equals("")) {
+            Log.e(TAG, "compileOwnerSignatureKey: Invalid ownerSignature");
+        }
+    }
+
+    private void compileAdoptionFlag() {
+        final int byteOffset = 20;
+
+        manufactureDataFilter[byteOffset] = (byte) (adoptionFlag ? 1 : 0);
+        manufactureDataMask[byteOffset] = (byte) 0xff;
+    }
+
+    private int groupToInt(String group) {
+        if (group == null) {
+            return 0;
+        }
+        if (group.equals("")) {
+            return 0;
+        } else return Integer.parseInt(group);
+    }
+
+    private String parseFwVersion(byte[] bytes) {
+        int fwVersionCode = 0;
+
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        bb = bb.order(ByteOrder.LITTLE_ENDIAN);
+        while (bb.hasRemaining()) {
+            short s = bb.getShort();
+            fwVersionCode = 0xFFFF & s;
+        }
+        int thousands = fwVersionCode / 1000;
+        int hundreds = (fwVersionCode - thousands) / 100;
+        int dozens = (fwVersionCode - thousands * 1000 - hundreds * 100);
+
+        return "" + thousands + "." + hundreds + "." + dozens;
+    }
+
+    private int parseProductCode(byte[] bytes) {
+        int productCode = 0;
+
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        bb = bb.order(ByteOrder.LITTLE_ENDIAN);
+        while (bb.hasRemaining()) {
+            short s = bb.getShort();
+            productCode = 0xFFFF & s;
+        }
+        return productCode;
+    }
+
+    private String parseOwnerSignatureKey(byte[] bytes) {
+        StringBuilder ownerSignatureKey = new StringBuilder();
+        for (byte b : bytes) {
+            ownerSignatureKey.append(String.format("%02x", b));
+        }
+        return ownerSignatureKey.toString();
+    }
+
+    private boolean parseAdoptingFlag(byte b) {
+        return b == 1;
+    }
 }
+

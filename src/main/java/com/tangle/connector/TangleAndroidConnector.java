@@ -129,14 +129,12 @@ public class TangleAndroidConnector extends Service {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             switch (newState) {
                 case BluetoothProfile.STATE_CONNECTED:
-                    mBluetoothGatt = gatt;
                     Log.d(TAG, "onConnectionStateChange: Connected to GATT server.");
                     Log.d(TAG, "onConnectionStateChange: Attempting to start service discovery:" + mBluetoothGatt.discoverServices());
                     break;
                 case BluetoothProfile.STATE_DISCONNECTED:
                     setConnectionState(STATE_DISCONNECTED);
                     Log.d(TAG, "onConnectionStateChange: Disconnected from GATT server.");
-                    mBluetoothGatt = gatt;
                     mBluetoothGatt.close();
                     mBluetoothGatt = null;
                     break;
@@ -637,9 +635,10 @@ public class TangleAndroidConnector extends Service {
 
         if (connectionState == STATE_CONNECTED) {
             mBluetoothGatt.disconnect();
-        }
+        } else {
             mBluetoothGatt.close();
             mBluetoothGatt = null;
+        }
     }
 
     @Nullable
