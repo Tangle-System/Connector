@@ -711,7 +711,7 @@ public class ActivityControl extends AppCompatActivity {
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.deliver(command_payload);
             } else {
-                sendReject("DeviceNotConnected");
+                sendReject("DeviceDisconnected");
             }
         }
 
@@ -725,7 +725,7 @@ public class ActivityControl extends AppCompatActivity {
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.transmit(command_payload);
             } else {
-                sendReject("DeviceNotConnected");
+                sendReject("DeviceDisconnected");
             }
         }
 
@@ -740,7 +740,7 @@ public class ActivityControl extends AppCompatActivity {
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.request(command_payload, read_response);
             } else {
-                sendReject("DeviceNotConnected");
+                sendReject("DeviceDisconnected");
             }
         }
 
@@ -755,7 +755,7 @@ public class ActivityControl extends AppCompatActivity {
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.setClock(timeStamp);
             } else {
-                sendReject("DeviceNotConnected");
+                sendReject("DeviceDisconnected");
             }
 
         }
@@ -766,7 +766,7 @@ public class ActivityControl extends AppCompatActivity {
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.getClock();
             } else {
-                sendReject("DeviceNotConnected");
+                sendReject("DeviceDisconnected");
             }
         }
 
@@ -780,7 +780,7 @@ public class ActivityControl extends AppCompatActivity {
                     sendReject("FirmwareNull");
                 }
             } else {
-                sendReject("DeviceNotConnected");
+                sendReject("DeviceDisconnected");
             }
         }
 
