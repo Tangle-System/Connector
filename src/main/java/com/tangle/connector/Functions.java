@@ -1,6 +1,15 @@
 package com.tangle.connector;
 
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.database.DatabaseErrorHandler;
+
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import com.tangle.connector.activities.ActivityControl;
+
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -111,5 +120,35 @@ public class Functions {
         }
 
         return result;
+    }
+
+    /**
+     *This function will start AndroidController.
+     *With parameters you can set some functionality of connector.
+     * @param defaultWebUrl defining default web for webView. To this url you will be send on home button click.
+     */
+    public static void startAndroidConnector(Context context, String defaultWebUrl){
+        Intent intent = new Intent(context, ActivityControl.class);
+        intent.putExtra("defaultWebUrl", defaultWebUrl);
+        context.startActivity(intent);
+    }
+
+    /**
+     *This function will start AndroidController.
+     *With parameters you can set some functionality of connector.
+     * @param defaultWebUrl Defining default web for webView. To this url you will be send on home button click.
+     * @param updaterUrl Defining url for appUpdater for checking new versions of application.
+     * @param disableBackButton When you set this as true then function of system back button will be disable.
+     * @param fullScreenMode  When you set this as true the Activity will be show as fullscreen.
+     * @param screenOrientation There you can set screen orientation with {@link ActivityInfo} constants.
+     */
+    public static void startAndroidConnector(Context context, String defaultWebUrl, String updaterUrl, boolean disableBackButton, boolean fullScreenMode, int screenOrientation){
+        Intent intent = new Intent(context, ActivityControl.class);
+        intent.putExtra("defaultWebUrl", defaultWebUrl);
+        intent.putExtra("updaterUrl", updaterUrl);
+        intent.putExtra("disableBackButton", disableBackButton);
+        intent.putExtra("fullScreenMode", fullScreenMode);
+        intent.putExtra("screenOrientation", screenOrientation);
+        context.startActivity(intent);
     }
 }

@@ -67,25 +67,15 @@ public class ActivityControl extends AppCompatActivity {
     private boolean found = false;
     private boolean autoSelectStopped = true;
     private boolean readResponse = false;
-    private boolean disableBackButton = false;
+    private boolean disableBackButton;
+    private boolean fullScreenMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
-
-        //TODO: Vytvořit statickou funkci, která spouší Connector s parametrama. Jako jsou: defaultWeb, appUpdater, deactivateBackButton, HideSystemUI and screenOrientation.
-        hideSystemUI();
-        onChangeVisibility();
-
         layoutActivityControl = findViewById(R.id.layout_activity_control);
-
-        Intent intent = getIntent();
-        defaultWebUrl = intent.getStringExtra("defaultWebUrl");
-        disableBackButton = intent.getBooleanExtra("disableBackButton", false);
-        if (intent.getStringExtra("updaterUrl") != null) {
-            setAppUpdater(intent.getStringExtra("updaterUrl"));
-        }
+        setConnectorSpecifications();
 
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", defaultWebUrl);
@@ -97,6 +87,31 @@ public class ActivityControl extends AppCompatActivity {
                 setButtonDefaultUrl();
             }
         }
+    }
+
+    private void setConnectorSpecifications(){
+        Intent intent = getIntent();
+
+        // Set default webUrl for webView
+        defaultWebUrl = intent.getStringExtra("defaultWebUrl");
+
+        // Set appUpdater and his url for checking new versions of application
+        if (intent.getStringExtra("updaterUrl") != null) {
+            setAppUpdater(intent.getStringExtra("updaterUrl"));
+        }
+
+        // Disable system back button functionality
+        disableBackButton = intent.getBooleanExtra("disableBackButton", false);
+
+        // Enable fullScreen mode. When is enabled keyboard do not work properly
+        if(intent.getBooleanExtra("fullScreenMode", false)){
+            fullScreenMode = true;
+            hideSystemUI();
+            onChangeVisibility();
+        }
+
+        // Set screen orientation of ActivityControl
+        this.setRequestedOrientation(intent.getIntExtra("screenOrientation",ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
     }
 
     private boolean permissionAccessFineLocationGuaranteed() {
@@ -199,9 +214,6 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     public void setAppUpdater(String url) {
-        //TODO: Předělat screen orientation pomocí funkce volající Connector (nastavení dle vložených parametrů).
-        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-
         AppUpdater appUpdater = new AppUpdater(this);
         appUpdater.setUpdateFrom(UpdateFrom.JSON)
                 .setUpdateJSON(url)
@@ -460,7 +472,7 @@ public class ActivityControl extends AppCompatActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
+        if (hasFocus && fullScreenMode) {
             hideSystemUI();
         }
     }
