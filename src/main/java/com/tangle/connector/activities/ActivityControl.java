@@ -89,7 +89,7 @@ public class ActivityControl extends AppCompatActivity {
         }
     }
 
-    private void setConnectorSpecifications(){
+    private void setConnectorSpecifications() {
         Intent intent = getIntent();
 
         // Set default webUrl for webView
@@ -104,14 +104,14 @@ public class ActivityControl extends AppCompatActivity {
         disableBackButton = intent.getBooleanExtra("disableBackButton", false);
 
         // Enable fullScreen mode. When is enabled keyboard do not work properly
-        if(intent.getBooleanExtra("fullScreenMode", false)){
+        if (intent.getBooleanExtra("fullScreenMode", false)) {
             fullScreenMode = true;
             hideSystemUI();
             onChangeVisibility();
         }
 
         // Set screen orientation of ActivityControl
-        this.setRequestedOrientation(intent.getIntExtra("screenOrientation",ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
+        this.setRequestedOrientation(intent.getIntExtra("screenOrientation", ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
     }
 
     private boolean permissionAccessFineLocationGuaranteed() {
@@ -736,7 +736,7 @@ public class ActivityControl extends AppCompatActivity {
                 return;
             }
             readResponse = read_response;
-            Log.d(TAG, "request: " + Functions.logBytes(command_payload));
+            Log.d(TAG, "request: " + Functions.logBytes(command_payload) + ", readResponse: " + read_response);
             if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
                 connector.request(command_payload, read_response);
             } else {
@@ -784,23 +784,32 @@ public class ActivityControl extends AppCompatActivity {
             }
         }
 
-        /** Function open will open url, which is in parameter, in webView or other preferred application.
-         * @param url Web address which will open be open. **/
+        /**
+         * Function open will open url, which is in parameter, in webView or other preferred application.
+         *
+         * @param url Web address which will open be open.
+         **/
         @JavascriptInterface
         public void open(String url) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(browserIntent);
         }
 
-        /** Function will set the requested orientation according to value in parameter
-         * @param requestedOrientation There you can set screen orientation with {@link ActivityInfo} constants. **/
+        /**
+         * Function will set the requested orientation according to value in parameter
+         *
+         * @param requestedOrientation There you can set screen orientation with {@link ActivityInfo} constants.
+         **/
         @JavascriptInterface
-        public void setRequestedOrientation(int requestedOrientation){
+        public void setRequestedOrientation(int requestedOrientation) {
             ActivityControl.this.setRequestedOrientation(requestedOrientation);
         }
-        /** Function which in webView load the default "home" website. **/
+
+        /**
+         * Function which in webView load the default "home" website.
+         **/
         @JavascriptInterface
-        public void goHome(){
+        public void goHome() {
             webView.loadUrl(defaultWebUrl);
         }
     }

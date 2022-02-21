@@ -302,14 +302,14 @@ public class TangleAndroidConnector extends Service {
         });
     }
 
-    public void request(byte[] command_payload, boolean red_response) {
+    public void request(byte[] command_payload, boolean read_response) {
         communicationType = COMMUNICATION_TYPE_REQUEST;
         mAsyncWriteReadThread.mHandler.post(() -> {
             if (!isDataSent) {
                 pauseThread();
             }
 
-            requested = true;
+            requested = read_response;
             try {
                 writeBytes(DEVICE_CHAR_UUID, command_payload, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             } catch (Exception e) {
@@ -317,7 +317,7 @@ public class TangleAndroidConnector extends Service {
                 characteristicCommunicationListener.onCharacteristicCommunicationMassage(new byte[0], REQUEST_WROTE_REJECT);
                 return;
             }
-            if (!red_response) {
+            if (!read_response) {
                 return;
             }
             if (!isDataSent) {
