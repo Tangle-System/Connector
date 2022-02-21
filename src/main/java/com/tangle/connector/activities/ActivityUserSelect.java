@@ -49,7 +49,6 @@ import java.util.ArrayList;
 public class ActivityUserSelect extends AppCompatActivity {
 
     private static final String TAG = ActivityUserSelect.class.getName();
-    private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private static final int MANUFACTURE_ID = 0x02e5;
     private static long SCAN_PERIOD = 5000;
 
@@ -58,7 +57,6 @@ public class ActivityUserSelect extends AppCompatActivity {
     private TextView informationText;
     private Button buttonBack;
     private Button buttonScanAgain;
-    private ImageView imageViewBleScanCorrect;
     private LottieAnimationView getImageViewBleScanMain;
     private ConstraintLayout layoutBleScan;
 
@@ -85,7 +83,6 @@ public class ActivityUserSelect extends AppCompatActivity {
         informationText = findViewById(R.id.informationText);
         buttonBack = findViewById(R.id.button_back);
         buttonScanAgain = findViewById(R.id.button_scan_again);
-        imageViewBleScanCorrect = findViewById(R.id.imageView_ble_scan_correct);
         getImageViewBleScanMain = findViewById(R.id.imageView_ble_scan_mainImage);
         layoutBleScan = findViewById(R.id.layout_ble_scan);
 
@@ -118,7 +115,6 @@ public class ActivityUserSelect extends AppCompatActivity {
             Type type1 = new TypeToken<TangleParameters[]>() {
             }.getType();
             TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
-
 
             for (TangleParameters criterion : criteria) {
                 if (!criterion.isLegacy()) {
@@ -199,18 +195,6 @@ public class ActivityUserSelect extends AppCompatActivity {
 
             selected = true;
             finish();
-
-/*            TransitionManager.beginDelayedTransition(layoutBleScan);
-            mTextView.setText("Zařízení xxxx bylo spárováno!");
-            getImageViewBleScanMain.setAnimation(R.raw.ble_found_animation);
-            getImageViewBleScanMain.setRepeatCount(0);
-            getImageViewBleScanMain.playAnimation();
-            mListView.setVisibility(View.INVISIBLE);
-            mListView.setClickable(false);
-            informationText.setVisibility(View.VISIBLE);
-            buttonScanAgain.setText("Spárovat nové");
-            buttonScanAgain.setVisibility(View.VISIBLE);
-            buttonMyApps.setVisibility(View.VISIBLE);*/
         });
     }
 
@@ -228,7 +212,6 @@ public class ActivityUserSelect extends AppCompatActivity {
         } else {
             mTextView.setVisibility(View.INVISIBLE);
             mTextView.setText(R.string.available_devices);
-            imageViewBleScanCorrect.setVisibility(View.VISIBLE);
             getImageViewBleScanMain.setAnimation(R.raw.ble_found_animation);
             getImageViewBleScanMain.setRepeatCount(0);
             getImageViewBleScanMain.playAnimation();

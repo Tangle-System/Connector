@@ -22,17 +22,6 @@
         app:lottie_loop="true"
         app:lottie_rawRes="@raw/ble_scan_animation" />
 
-    <ImageView
-        android:id="@+id/imageView_ble_scan_correct"
-        android:layout_width="28dp"
-        android:layout_height="21dp"
-        android:layout_marginBottom="13dp"
-        android:src="@drawable/ic_correct"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/text_process"
-        app:layout_constraintEnd_toEndOf="@+id/text_process"
-        app:layout_constraintStart_toStartOf="@+id/text_process"/>
-
     <TextView
         android:id="@+id/text_process"
         android:layout_width="0dp"
