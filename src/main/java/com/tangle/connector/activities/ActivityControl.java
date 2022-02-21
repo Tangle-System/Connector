@@ -51,7 +51,7 @@ public class ActivityControl extends AppCompatActivity {
     public static final String USER_SELECT_RESOLVE = "userSelect -> resolve(tangleParameters)";
 
     private WebView webView;
-    private FloatingActionButton buttonDefaultUrl;
+    private FloatingActionButton buttonHomeUrl;
     private ConstraintLayout layoutActivityControl;
 
     private TangleAndroidConnector connector;
@@ -164,8 +164,8 @@ public class ActivityControl extends AppCompatActivity {
     }
 
     private void setButtonDefaultUrl() {
-        buttonDefaultUrl = findViewById(R.id.button_default_url);
-        buttonDefaultUrl.setOnClickListener(v -> webView.loadUrl(defaultWebUrl));
+        buttonHomeUrl = findViewById(R.id.button_home_url);
+        buttonHomeUrl.setOnClickListener(v -> webView.loadUrl(defaultWebUrl));
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -200,9 +200,9 @@ public class ActivityControl extends AppCompatActivity {
 
                 // Show home button if website isn't the default webSite
                 if (!url.equals(defaultWebUrl)) {
-                    buttonDefaultUrl.setVisibility(View.VISIBLE);
+                    buttonHomeUrl.setVisibility(View.VISIBLE);
                 } else
-                    buttonDefaultUrl.setVisibility(View.GONE);
+                    buttonHomeUrl.setVisibility(View.GONE);
             }
         });
     }
@@ -784,10 +784,24 @@ public class ActivityControl extends AppCompatActivity {
             }
         }
 
+        /** Function open will open url, which is in parameter, in webView or other preferred application.
+         * @param url Web address which will open be open. **/
         @JavascriptInterface
         public void open(String url) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(browserIntent);
+        }
+
+        /** Function will set the requested orientation according to value in parameter
+         * @param requestedOrientation There you can set screen orientation with {@link ActivityInfo} constants. **/
+        @JavascriptInterface
+        public void setRequestedOrientation(int requestedOrientation){
+            ActivityControl.this.setRequestedOrientation(requestedOrientation);
+        }
+        /** Function which in webView load the default "home" website. **/
+        @JavascriptInterface
+        public void goHome(){
+            webView.loadUrl(defaultWebUrl);
         }
     }
 }
