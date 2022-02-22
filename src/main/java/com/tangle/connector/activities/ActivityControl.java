@@ -172,7 +172,6 @@ public class ActivityControl extends AppCompatActivity {
     private void setWebView() {
         webView = findViewById(R.id.webView);
 
-        webView.setWebViewClient(new WebViewClient());
         webView.setBackgroundColor(Color.BLACK);
         WebSettings webSettings = webView.getSettings();
 
@@ -180,6 +179,7 @@ public class ActivityControl extends AppCompatActivity {
         webSettings.setAllowFileAccess(true);
         webSettings.setAppCacheEnabled(true);
         webSettings.setJavaScriptEnabled(true);
+//        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // load online by default
 
@@ -189,8 +189,6 @@ public class ActivityControl extends AppCompatActivity {
         if (!isNetworkAvailable()) { // loading offline
             webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         }
-
-        webView.loadUrl(webURL);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -204,7 +202,24 @@ public class ActivityControl extends AppCompatActivity {
                 } else
                     buttonHomeUrl.setVisibility(View.GONE);
             }
+
+            // Potřeba použít WebChromeClient kde ale není onPageFinished.
+/*            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                myRequest = request;
+
+                for (String permission : request.getResources()) {
+                    switch (permission) {
+                        case "android.webkit.resource.AUDIO_CAPTURE": {
+                            askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+                            break;
+                        }
+                    }
+                }
+            }*/
         });
+
+        webView.loadUrl(webURL);
     }
 
     private boolean isNetworkAvailable() {
