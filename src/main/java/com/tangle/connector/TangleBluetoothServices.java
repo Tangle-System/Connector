@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class TangleAndroidConnector extends Service {
-    private final String TAG = TangleAndroidConnector.class.getName();
+public class TangleBluetoothServices extends Service {
+    private final String TAG = TangleBluetoothServices.class.getName();
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_CONNECTED = 1;
 
@@ -76,7 +76,7 @@ public class TangleAndroidConnector extends Service {
     private CharacteristicCommunicationListener characteristicCommunicationListener;
     private final Context mContext;
 
-    public TangleAndroidConnector(String deviceMacAddress, Context context) {
+    public TangleBluetoothServices(String deviceMacAddress, Context context) {
         this.deviceMacAddress = deviceMacAddress;
         this.mContext = context;
 

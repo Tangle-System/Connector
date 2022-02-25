@@ -38,7 +38,7 @@ import com.google.gson.Gson;
 import com.tangle.connector.BleScanner;
 import com.tangle.connector.Functions;
 import com.tangle.connector.R;
-import com.tangle.connector.TangleAndroidConnector;
+import com.tangle.connector.TangleBluetoothServices;
 import com.tangle.connector.TangleParameters;
 
 public class ActivityControl extends AppCompatActivity {
@@ -54,7 +54,7 @@ public class ActivityControl extends AppCompatActivity {
     private FloatingActionButton buttonHomeUrl;
     private ConstraintLayout layoutActivityControl;
 
-    private TangleAndroidConnector connector;
+    private TangleBluetoothServices connector;
     private BroadcastReceiver broadcastReceiver;
     private SharedPreferences mSharedPref;
 
@@ -256,7 +256,7 @@ public class ActivityControl extends AppCompatActivity {
                 switch (intent.getAction()) {
                     case USER_SELECT_RESOLVE:
                         macAddress = intent.getStringExtra("macAddress");
-                        connector = new TangleAndroidConnector(macAddress, getApplicationContext());
+                        connector = new TangleBluetoothServices(macAddress, getApplicationContext());
                         TangleParameters tangleParameters = intent.getParcelableExtra("tangleParameters");
                         Gson gson = new Gson();
                         tangleParametersJson = gson.toJson(tangleParameters);
@@ -280,7 +280,7 @@ public class ActivityControl extends AppCompatActivity {
     private void setConnectorServices() {
         connector.setChangeStateListener(connectionState -> runOnUiThread(() -> {
             switch (connectionState) {
-                case TangleAndroidConnector.STATE_DISCONNECTED:
+                case TangleBluetoothServices.STATE_DISCONNECTED:
                     Log.d(TAG, "bluetoothService: Disconnected");
                     if (connecting) { // App state connecting
                         sendReject("ConnectionFailed");
@@ -293,7 +293,7 @@ public class ActivityControl extends AppCompatActivity {
                         webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
                     }
                     break;
-                case TangleAndroidConnector.STATE_CONNECTED:
+                case TangleBluetoothServices.STATE_CONNECTED:
                     Log.d(TAG, "bluetoothService: Connected");
                     webView.loadUrl("javascript:window.tangleConnect.emit('#connected');");
                     if (connecting) {
@@ -315,41 +315,41 @@ public class ActivityControl extends AppCompatActivity {
 
         connector.setCharacteristicCommunicationListener((bytes, communicationType) -> {
             switch (communicationType) {
-                case TangleAndroidConnector.CLOCK_READ_RESOLVE:
-                case TangleAndroidConnector.REQUEST_READ_RESOLVE:
+                case TangleBluetoothServices.CLOCK_READ_RESOLVE:
+                case TangleBluetoothServices.REQUEST_READ_RESOLVE:
                     sendResolve(bytes);
                     break;
-                case TangleAndroidConnector.REQUEST_WROTE_RESOLVE:
+                case TangleBluetoothServices.REQUEST_WROTE_RESOLVE:
                     if (!readResponse) {
                         sendResolve();
                     }
                     break;
-                case TangleAndroidConnector.CLOCK_WROTE_RESOLVE:
-                case TangleAndroidConnector.DELIVER_WROTE_RESOLVE:
-                case TangleAndroidConnector.TRANSMIT_WROTE_RESOLVE:
+                case TangleBluetoothServices.CLOCK_WROTE_RESOLVE:
+                case TangleBluetoothServices.DELIVER_WROTE_RESOLVE:
+                case TangleBluetoothServices.TRANSMIT_WROTE_RESOLVE:
                     sendResolve();
                     break;
-                case TangleAndroidConnector.CLOCK_READ_REJECT:
+                case TangleBluetoothServices.CLOCK_READ_REJECT:
                     sendReject("ClockReadFailed");
                     break;
-                case TangleAndroidConnector.CLOCK_WROTE_REJECT:
+                case TangleBluetoothServices.CLOCK_WROTE_REJECT:
                     sendReject("ClockWriteFailed");
                     break;
-                case TangleAndroidConnector.REQUEST_READ_REJECT:
-                case TangleAndroidConnector.REQUEST_WROTE_REJECT:
+                case TangleBluetoothServices.REQUEST_READ_REJECT:
+                case TangleBluetoothServices.REQUEST_WROTE_REJECT:
                     sendReject("RequestFailed");
                     break;
-                case TangleAndroidConnector.DELIVER_WROTE_REJECT:
+                case TangleBluetoothServices.DELIVER_WROTE_REJECT:
                     sendReject("DeliverFailed");
                     break;
-                case TangleAndroidConnector.TRANSMIT_WROTE_REJECT:
+                case TangleBluetoothServices.TRANSMIT_WROTE_REJECT:
                     sendReject("TransmitFailed");
                     break;
-                case TangleAndroidConnector.UPDATE_FIRMWARE_RESOLVE:
+                case TangleBluetoothServices.UPDATE_FIRMWARE_RESOLVE:
                     runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'success');"));
                     sendResolve();
                     break;
-                case TangleAndroidConnector.UPDATE_FIRMWARE_REJECT:
+                case TangleBluetoothServices.UPDATE_FIRMWARE_REJECT:
                     runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'fail');"));
                     sendReject("UpdateFailed");
                     break;
@@ -369,7 +369,7 @@ public class ActivityControl extends AppCompatActivity {
             Gson gson = new Gson();
             macAddress = nearestDevice.getDevice().getAddress();
             tangleParametersJson = gson.toJson(nearestTangleParameters);
-            connector = new TangleAndroidConnector(macAddress, getApplicationContext());
+            connector = new TangleBluetoothServices(macAddress, getApplicationContext());
             sendResolve(tangleParametersJson);
         } else {
             sendReject("SelectionFailed");
@@ -576,7 +576,7 @@ public class ActivityControl extends AppCompatActivity {
         public void userSelect(String criteria) {
             Log.d(TAG, "userSelect: " + criteria);
             if (connector != null) {
-                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                if (connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                     connector.disconnect();
                 }
             }
@@ -594,7 +594,7 @@ public class ActivityControl extends AppCompatActivity {
         public void userSelect(String criteria, int timeout) {
             Log.d(TAG, "userSelect: " + criteria);
             if (connector != null) {
-                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                if (connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                     connector.disconnect();
                 }
             }
@@ -613,7 +613,7 @@ public class ActivityControl extends AppCompatActivity {
         public void autoSelect(String criteria, int scan_period, int timeout) {
             Log.d(TAG, "autoSelect: " + criteria);
             if (connector != null) {
-                if (connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+                if (connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                     connector.disconnect();
                 }
             }
@@ -687,7 +687,7 @@ public class ActivityControl extends AppCompatActivity {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if (connector.getConnectionState() == TangleAndroidConnector.STATE_DISCONNECTED) {
+                if (connector.getConnectionState() == TangleBluetoothServices.STATE_DISCONNECTED) {
                     connector.disconnect();
                     sendReject("ConnectionFailed");
                 }
@@ -697,7 +697,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void disconnect() {
             Log.d(TAG, "disconnect: ");
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 disconnecting = true;
                 connector.disconnect();
             } else {
@@ -708,7 +708,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void connected() {
             Log.d(TAG, "connected: ");
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 sendResolve(tangleParametersJson);
             } else {
                 sendResolveNull();
@@ -723,7 +723,7 @@ public class ActivityControl extends AppCompatActivity {
             }
 
             Log.d(TAG, "deliver: " + Functions.logBytes(command_payload));
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 connector.deliver(command_payload);
             } else {
                 sendReject("DeviceDisconnected");
@@ -737,7 +737,7 @@ public class ActivityControl extends AppCompatActivity {
                 return;
             }
             Log.d(TAG, "transmit: " + Functions.logBytes(command_payload));
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 connector.transmit(command_payload);
             } else {
                 sendReject("DeviceDisconnected");
@@ -752,7 +752,7 @@ public class ActivityControl extends AppCompatActivity {
             }
             readResponse = read_response;
             Log.d(TAG, "request: " + Functions.logBytes(command_payload) + ", readResponse: " + read_response);
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 connector.request(command_payload, read_response);
             } else {
                 sendReject("DeviceDisconnected");
@@ -767,7 +767,7 @@ public class ActivityControl extends AppCompatActivity {
             }
 
             Log.d(TAG, "writeClock: " + Functions.logBytes(timeStamp));
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 connector.setClock(timeStamp);
             } else {
                 sendReject("DeviceDisconnected");
@@ -778,7 +778,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void readClock() {
             Log.d(TAG, "readClock: ");
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 connector.getClock();
             } else {
                 sendReject("DeviceDisconnected");
@@ -788,7 +788,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void updateFW(byte[] firmware) {
             Log.d(TAG, "updateFirmware: ");
-            if (connector != null && connector.getConnectionState() == TangleAndroidConnector.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 if (firmware != null) {
                     connector.updateFirmware(firmware);
                 } else {

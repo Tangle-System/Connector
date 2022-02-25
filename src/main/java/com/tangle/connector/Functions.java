@@ -120,6 +120,10 @@ public class Functions {
         }
 
         return result;
+    }    public static void startAndroidConnector(Context context, String defaultWebUrl){
+        Intent intent = new Intent(context, ActivityControl.class);
+        intent.putExtra("defaultWebUrl", defaultWebUrl);
+        context.startActivity(intent);
     }
 
     /**
@@ -127,11 +131,11 @@ public class Functions {
      *With parameters you can set some functionality of connector.
      * @param defaultWebUrl defining default web for webView. To this url you will be send on home button click.
      */
-    public static void startAndroidConnector(Context context, String defaultWebUrl){
-        Intent intent = new Intent(context, ActivityControl.class);
-        intent.putExtra("defaultWebUrl", defaultWebUrl);
-        context.startActivity(intent);
-    }
+//    public static void startAndroidConnector(Context context, String defaultWebUrl){
+//        Intent intent = new Intent(context, ActivityControl.class);
+//        intent.putExtra("defaultWebUrl", defaultWebUrl);
+//        context.startActivity(intent);
+//    }
 
     /**
      *This function will start AndroidController.
@@ -142,13 +146,13 @@ public class Functions {
      * @param fullScreenMode  When you set this as true the Activity will be show as fullscreen.
      * @param screenOrientation There you can set screen orientation with {@link ActivityInfo} constants.
      */
-    public static void startAndroidConnector(Context context, String defaultWebUrl, String updaterUrl, boolean disableBackButton, boolean fullScreenMode, int screenOrientation){
-        Intent intent = new Intent(context, ActivityControl.class);
-        intent.putExtra("defaultWebUrl", defaultWebUrl);
-        intent.putExtra("updaterUrl", updaterUrl);
-        intent.putExtra("disableBackButton", disableBackButton);
-        intent.putExtra("fullScreenMode", fullScreenMode);
-        intent.putExtra("screenOrientation", screenOrientation);
-        context.startActivity(intent);
-    }
+//    public static void startAndroidConnector(Context context, String defaultWebUrl, String updaterUrl, boolean disableBackButton, boolean fullScreenMode, int screenOrientation){
+//        Intent intent = new Intent(context, ActivityControl.class);
+//        intent.putExtra("defaultWebUrl", defaultWebUrl);
+//        intent.putExtra("updaterUrl", updaterUrl);
+//        intent.putExtra("disableBackButton", disableBackButton);
+//        intent.putExtra("fullScreenMode", fullScreenMode);
+//        intent.putExtra("screenOrientation", screenOrientation);
+//        context.startActivity(intent);
+//    }
 }

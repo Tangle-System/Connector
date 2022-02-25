@@ -1,6 +1,5 @@
 package com.tangle.connector.activities;
 
-import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -9,7 +8,6 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,7 +29,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.ActivityCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.airbnb.lottie.LottieAnimationView;
@@ -39,10 +36,9 @@ import com.airbnb.lottie.LottieDrawable;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.tangle.connector.R;
-import com.tangle.connector.TangleAndroidConnector;
+import com.tangle.connector.TangleBluetoothServices;
 import com.tangle.connector.TangleParameters;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 
@@ -108,7 +104,7 @@ public class ActivityUserSelect extends AppCompatActivity {
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
             ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
-            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleBluetoothServices.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
             filters.add(scanFilterBuilder.build());
         } else {
             Gson gson = new Gson();

@@ -1,10 +1,10 @@
 <resources>
     <string name="app_name" translatable="false">TangleConnect</string>
-    <string name="information_text">Make sure the device is powered and your phone has Bluetooth turned on. In other case, try restarting the device and app.</string>
+    <string name="information_text">Make sure the device is powered on and your phone has Bluetooth turned on. In other case, try restarting the device and app.</string>
     <string name="scan_again">Try again</string>
     <string name="back">Back</string>
     <string name="available_devices">Available devices:</string>
-    <string name="looking_for_devices">Searching devices…</string>
+    <string name="looking_for_devices">Searching for devices…</string>
     <string name="no_device_in_range">Looks like no device is in range.</string>
     <string name="need_location_access">Tangle Connect app needs an access to your location.</string>
     <string name="accept">Accept</string>

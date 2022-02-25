@@ -13,7 +13,6 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 
@@ -42,7 +41,7 @@ public class BleScanner {
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
             ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
-            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleAndroidConnector.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleBluetoothServices.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
             filters.add(scanFilterBuilder.build());
         } else {
             Gson gson = new Gson();
