@@ -199,7 +199,8 @@ public class ActivityUserSelect extends AppCompatActivity {
         if (mAdapter.myList.isEmpty()) {
             mTextView.setText(R.string.no_device_in_range);
             getImageViewBleScanMain.setAnimation(R.raw.ble_unavailable_animation);
-            getImageViewBleScanMain.setRepeatCount(0);
+            getImageViewBleScanMain.setRepeatCount(LottieDrawable.INFINITE);
+//            getImageViewBleScanMain.setRepeatCount(0);
             getImageViewBleScanMain.playAnimation();
             informationText.setVisibility(View.VISIBLE);
             buttonBack.setVisibility(View.VISIBLE);
@@ -209,7 +210,8 @@ public class ActivityUserSelect extends AppCompatActivity {
             mTextView.setVisibility(View.INVISIBLE);
             mTextView.setText(R.string.available_devices);
             getImageViewBleScanMain.setAnimation(R.raw.ble_found_animation);
-            getImageViewBleScanMain.setRepeatCount(0);
+            getImageViewBleScanMain.setRepeatCount(LottieDrawable.INFINITE);
+//            getImageViewBleScanMain.setRepeatCount(0);
             getImageViewBleScanMain.playAnimation();
             mTextView.setVisibility(View.VISIBLE);
         }

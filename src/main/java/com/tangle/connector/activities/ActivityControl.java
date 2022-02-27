@@ -26,6 +26,8 @@ import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -175,13 +177,20 @@ public class ActivityControl extends AppCompatActivity {
         webView.setBackgroundColor(Color.BLACK);
         WebSettings webSettings = webView.getSettings();
 
+        webSettings.setAppCacheEnabled(true);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // load online by default
         webSettings.setAppCachePath(getApplicationContext().getCacheDir().getAbsolutePath());
         webSettings.setAllowFileAccess(true);
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setJavaScriptEnabled(true);
-//        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
+        webSettings.setSaveFormData(true);
         webSettings.setDomStorageEnabled(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // load online by default
+        webSettings.setSupportZoom(true);
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+        webView.setClickable(true);
 
         webView.setWebContentsDebuggingEnabled(true); // pouze pro debugovani
         webView.addJavascriptInterface(new JavascriptHandler(this), "tangleConnect");
@@ -202,21 +211,21 @@ public class ActivityControl extends AppCompatActivity {
                 } else
                     buttonHomeUrl.setVisibility(View.GONE);
             }
+        });
 
-            // Potřeba použít WebChromeClient kde ale není onPageFinished.
-/*            @Override
-            public void onPermissionRequest(final PermissionRequest request) {
-                myRequest = request;
-
-                for (String permission : request.getResources()) {
-                    switch (permission) {
-                        case "android.webkit.resource.AUDIO_CAPTURE": {
-                            askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
-                            break;
-                        }
-                    }
-                }
-            }*/
+        webView.setWebChromeClient(new WebChromeClient(){
+//            public void onPermissionRequest(final PermissionRequest request) {
+//                myRequest = request;
+//
+//                for (String permission : request.getResources()) {
+//                    switch (permission) {
+//                        case "android.webkit.resource.AUDIO_CAPTURE": {
+//                            askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
         });
 
         webView.loadUrl(webURL);
@@ -613,9 +622,10 @@ public class ActivityControl extends AppCompatActivity {
         public void autoSelect(String criteria, int scan_period, int timeout) {
             Log.d(TAG, "autoSelect: " + criteria);
             if (connector != null) {
-                if (connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
-                    connector.disconnect();
-                }
+                connector.disconnect();
+//                if (connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+//                    connector.disconnect();
+//                }
             }
 
             found = false;
@@ -750,8 +760,9 @@ public class ActivityControl extends AppCompatActivity {
                 sendReject("RequestFailed");
                 return;
             }
-            readResponse = read_response;
             Log.d(TAG, "request: " + Functions.logBytes(command_payload) + ", readResponse: " + read_response);
+            
+            readResponse = read_response;
             if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 connector.request(command_payload, read_response);
             } else {
@@ -806,8 +817,11 @@ public class ActivityControl extends AppCompatActivity {
          **/
         @JavascriptInterface
         public void open(String url) {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(browserIntent);
+            if(url != null) {
+                Log.d(TAG, "open: " + url);
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(browserIntent);
+            }
         }
 
         /**
@@ -817,6 +831,7 @@ public class ActivityControl extends AppCompatActivity {
          **/
         @JavascriptInterface
         public void setRequestedOrientation(int requestedOrientation) {
+            Log.d(TAG, "setRequestedOrientation: "+requestedOrientation);
             ActivityControl.this.setRequestedOrientation(requestedOrientation);
         }
 
@@ -825,6 +840,7 @@ public class ActivityControl extends AppCompatActivity {
          **/
         @JavascriptInterface
         public void goHome() {
+            Log.d(TAG, "goHome: ");
             webView.loadUrl(defaultWebUrl);
         }
     }
