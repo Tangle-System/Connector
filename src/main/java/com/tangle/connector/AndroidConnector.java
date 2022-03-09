@@ -31,7 +31,7 @@ public class AndroidConnector {
      */
     public void start(){
         Intent intent = new Intent(context, ActivityControl.class);
-        intent.putExtra("defaultWebUrl", homeWebUrl);
+        intent.putExtra("homeWebUrl", homeWebUrl);
         intent.putExtra("updaterUrl", updaterUrl);
         intent.putExtra("disableBackButton", disableBackButton);
         intent.putExtra("fullScreenMode", fullScreenMode);

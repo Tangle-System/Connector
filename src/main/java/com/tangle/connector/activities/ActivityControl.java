@@ -26,7 +26,6 @@ import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.View;
 import android.webkit.JavascriptInterface;
-import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -53,7 +52,7 @@ public class ActivityControl extends AppCompatActivity {
     public static final String USER_SELECT_RESOLVE = "userSelect -> resolve(tangleParameters)";
 
     private WebView webView;
-    private FloatingActionButton buttonHomeUrl;
+    private FloatingActionButton buttonHome;
     private ConstraintLayout layoutActivityControl;
 
     private TangleBluetoothServices connector;
@@ -62,7 +61,7 @@ public class ActivityControl extends AppCompatActivity {
 
     private String macAddress = "";
     private String tangleParametersJson = "";
-    private String defaultWebUrl;
+    private String homeWebUrl;
     private String webURL;
     private boolean connecting = false;
     private boolean disconnecting = false;
@@ -71,6 +70,7 @@ public class ActivityControl extends AppCompatActivity {
     private boolean readResponse = false;
     private boolean disableBackButton;
     private boolean fullScreenMode;
+    private boolean hideHomeButton = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,13 +80,13 @@ public class ActivityControl extends AppCompatActivity {
         setConnectorSpecifications();
 
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
-        webURL = mSharedPref.getString("webURL", defaultWebUrl);
+        webURL = mSharedPref.getString("webURL", homeWebUrl);
 
         if (permissionAccessFineLocationGuaranteed()) {
             if (permissionBluetoothConnectGuaranteed()) {
                 setWebView();
                 setBroadcastReceiver();
-                setButtonDefaultUrl();
+                setButtonHomeUrl();
             }
         }
     }
@@ -95,7 +95,7 @@ public class ActivityControl extends AppCompatActivity {
         Intent intent = getIntent();
 
         // Set default webUrl for webView
-        defaultWebUrl = intent.getStringExtra("defaultWebUrl");
+        homeWebUrl = intent.getStringExtra("homeWebUrl");
 
         // Set appUpdater and his url for checking new versions of application
         if (intent.getStringExtra("updaterUrl") != null) {
@@ -165,9 +165,9 @@ public class ActivityControl extends AppCompatActivity {
         return true;
     }
 
-    private void setButtonDefaultUrl() {
-        buttonHomeUrl = findViewById(R.id.button_home_url);
-        buttonHomeUrl.setOnClickListener(v -> webView.loadUrl(defaultWebUrl));
+    private void setButtonHomeUrl() {
+        buttonHome = findViewById(R.id.button_home_url);
+        buttonHome.setOnClickListener(v -> webView.loadUrl(homeWebUrl));
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -203,17 +203,29 @@ public class ActivityControl extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                TransitionManager.beginDelayedTransition(layoutActivityControl);
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-                // Show home button if website isn't the default webSite
-                if (!url.equals(defaultWebUrl)) {
-                    buttonHomeUrl.setVisibility(View.VISIBLE);
-                } else
-                    buttonHomeUrl.setVisibility(View.GONE);
+                    // Show home button if website isn't the default webSite
+                    if (!url.equals(homeWebUrl) & !hideHomeButton) {
+                        runOnUiThread(() ->  {
+                            TransitionManager.beginDelayedTransition(layoutActivityControl);
+                            buttonHome.setVisibility(View.VISIBLE);
+                        });
+                    } else
+                        runOnUiThread(() -> {
+                            TransitionManager.beginDelayedTransition(layoutActivityControl);
+                            buttonHome.setVisibility(View.GONE);
+                        });
+                }).start();
             }
         });
 
-        webView.setWebChromeClient(new WebChromeClient(){
+        webView.setWebChromeClient(new WebChromeClient() {
 //            public void onPermissionRequest(final PermissionRequest request) {
 //                myRequest = request;
 //
@@ -510,7 +522,7 @@ public class ActivityControl extends AppCompatActivity {
                     if (permissionBluetoothConnectGuaranteed()) {
                         setWebView();
                         setBroadcastReceiver();
-                        setButtonDefaultUrl();
+                        setButtonHomeUrl();
                     }
 
                 } else {
@@ -529,7 +541,7 @@ public class ActivityControl extends AppCompatActivity {
                     if (permissionAccessFineLocationGuaranteed()) {
                         setWebView();
                         setBroadcastReceiver();
-                        setButtonDefaultUrl();
+                        setButtonHomeUrl();
                     }
                 } else {
                     final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -761,7 +773,7 @@ public class ActivityControl extends AppCompatActivity {
                 return;
             }
             Log.d(TAG, "request: " + Functions.logBytes(command_payload) + ", readResponse: " + read_response);
-            
+
             readResponse = read_response;
             if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
                 connector.request(command_payload, read_response);
@@ -817,7 +829,7 @@ public class ActivityControl extends AppCompatActivity {
          **/
         @JavascriptInterface
         public void open(String url) {
-            if(url != null) {
+            if (url != null) {
                 Log.d(TAG, "open: " + url);
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 startActivity(browserIntent);
@@ -831,7 +843,7 @@ public class ActivityControl extends AppCompatActivity {
          **/
         @JavascriptInterface
         public void setRequestedOrientation(int requestedOrientation) {
-            Log.d(TAG, "setRequestedOrientation: "+requestedOrientation);
+            Log.d(TAG, "setRequestedOrientation: " + requestedOrientation);
             ActivityControl.this.setRequestedOrientation(requestedOrientation);
         }
 
@@ -841,7 +853,18 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void goHome() {
             Log.d(TAG, "goHome: ");
-            webView.loadUrl(defaultWebUrl);
+            webView.loadUrl(homeWebUrl);
         }
+
+        /**
+         * Function will hide home button on website which is not set as home website.
+         *
+         * @param hide Set true for hide home button and false for show. Default value is false.
+         **/
+        @JavascriptInterface
+        public void hideHomeButton(boolean hide) {
+            hideHomeButton = hide;
+        }
+
     }
 }
