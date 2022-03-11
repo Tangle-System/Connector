@@ -177,8 +177,8 @@ public class ActivityControl extends AppCompatActivity {
         webView.setBackgroundColor(Color.BLACK);
         WebSettings webSettings = webView.getSettings();
 
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // load online by default
+//        webSettings.setAppCacheEnabled(true);
+//        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // load online by default
         webSettings.setAppCachePath(getApplicationContext().getCacheDir().getAbsolutePath());
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
@@ -195,9 +195,9 @@ public class ActivityControl extends AppCompatActivity {
         webView.setWebContentsDebuggingEnabled(true); // pouze pro debugovani
         webView.addJavascriptInterface(new JavascriptHandler(this), "tangleConnect");
 
-        if (!isNetworkAvailable()) { // loading offline
-            webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-        }
+//        if (!isNetworkAvailable()) { // loading offline
+//            webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+//        }
 
         webView.setWebViewClient(new WebViewClient() {
             @Override

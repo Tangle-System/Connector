@@ -5,7 +5,7 @@
     <string name="back">Back</string>
     <string name="available_devices">Available devices:</string>
     <string name="looking_for_devices">Searching for devices…</string>
-    <string name="no_device_in_range">Looks like there's no device in range.</string>
+    <string name="no_device_in_range">Looks like there\'s no device in range.</string>
     <string name="need_location_access">Tangle Connect app needs access to your location.</string>
     <string name="accept">Accept</string>
     <string name="deny">Deny</string>
