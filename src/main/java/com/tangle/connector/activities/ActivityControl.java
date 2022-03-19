@@ -377,7 +377,7 @@ public class ActivityControl extends AppCompatActivity {
                     sendReject("UpdateFailed");
                     break;
                 case TangleBluetoothServices.CHARACTERISTIC_NOTIFICATION:
-                    runOnUiThread(()-> webView.loadUrl("javascript:window.tangleConnect.emit('notification', "+ Functions.logBytes(bytes) +");"));
+                    runOnUiThread(()-> webView.loadUrl("javascript:window.tangleConnect.emit('#bytecode', "+ Functions.logBytes(bytes) +");"));
             }
         });
     }

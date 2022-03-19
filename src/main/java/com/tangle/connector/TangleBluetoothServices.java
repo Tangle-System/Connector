@@ -148,7 +148,7 @@ public class TangleBluetoothServices extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                gatt.setCharacteristicNotification(TERMINAL_CHAR_UUID, true);
+                gatt.setCharacteristicNotification(gatt.getService(TANGLE_SERVICE_UUID).getCharacteristic(TERMINAL_CHAR_UUID), true);
                 gatt.requestMtu(517);
 
                 isDataSent = false;
