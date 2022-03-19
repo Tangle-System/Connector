@@ -42,6 +42,8 @@ import com.tangle.connector.R;
 import com.tangle.connector.TangleBluetoothServices;
 import com.tangle.connector.TangleParameters;
 
+import java.util.Arrays;
+
 public class ActivityControl extends AppCompatActivity {
 
     private static final String TAG = ActivityControl.class.getName();
@@ -374,6 +376,8 @@ public class ActivityControl extends AppCompatActivity {
                     runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'fail');"));
                     sendReject("UpdateFailed");
                     break;
+                case TangleBluetoothServices.CHARACTERISTIC_NOTIFICATION:
+                    runOnUiThread(()-> webView.loadUrl("javascript:window.tangleConnect.emit('notification', "+ Functions.logBytes(bytes) +");"));
             }
         });
     }

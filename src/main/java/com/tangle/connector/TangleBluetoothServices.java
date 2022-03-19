@@ -52,6 +52,8 @@ public class TangleBluetoothServices extends Service {
     public static final int UPDATE_FIRMWARE_RESOLVE = 12;
     public static final int UPDATE_FIRMWARE_REJECT = 13;
 
+    public static final int CHARACTERISTIC_NOTIFICATION = 14;
+
 
     private final String deviceMacAddress;
     private final asyncWriteThread mAsyncWriteReadThread;
@@ -132,6 +134,7 @@ public class TangleBluetoothServices extends Service {
                     Log.d(TAG, "onConnectionStateChange: Connected to GATT server.");
                     Log.d(TAG, "onConnectionStateChange: Attempting to start service discovery:" + mBluetoothGatt.discoverServices());
                     break;
+
                 case BluetoothProfile.STATE_DISCONNECTED:
                     setConnectionState(STATE_DISCONNECTED);
                     Log.d(TAG, "onConnectionStateChange: Disconnected from GATT server.");
@@ -145,7 +148,9 @@ public class TangleBluetoothServices extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
+                gatt.setCharacteristicNotification(TERMINAL_CHAR_UUID, true);
                 gatt.requestMtu(517);
+
                 isDataSent = false;
                 setConnectionState(STATE_CONNECTED);
 
@@ -240,6 +245,14 @@ public class TangleBluetoothServices extends Service {
         }
 
         @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            super.onCharacteristicChanged(gatt, characteristic);
+            byte[] notifiedData = characteristic.getValue();
+
+            characteristicCommunicationListener.onCharacteristicCommunicationMassage(notifiedData, CHARACTERISTIC_NOTIFICATION);
+        }
+
+        @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
             super.onMtuChanged(gatt, mtu, status);
             synchronized (mAsyncWriteReadThread) {
@@ -249,8 +262,9 @@ public class TangleBluetoothServices extends Service {
             }
             Log.d(TAG, "onMtuChanged: " + mtu);
         }
-    };
 
+
+    };
 
     public boolean connect() {
         BluetoothAdapter bluetoothAdapter;
