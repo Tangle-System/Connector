@@ -846,8 +846,8 @@ public class ActivityControl extends AppCompatActivity {
          * @param requestedOrientation There you can set screen orientation with {@link ActivityInfo} constants.
          **/
         @JavascriptInterface
-        public void setRequestedOrientation(int requestedOrientation) {
-            Log.d(TAG, "setRequestedOrientation: " + requestedOrientation);
+        public void setRotation(int requestedOrientation) {
+            Log.d(TAG, "setRotation: " + requestedOrientation);
             ActivityControl.this.setRequestedOrientation(requestedOrientation);
         }
 
