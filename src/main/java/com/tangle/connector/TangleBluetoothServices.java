@@ -247,7 +247,7 @@ public class TangleBluetoothServices extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
-            byte[] notifiedData = characteristic.getValue();
+            final byte[] notifiedData = characteristic.getValue();
 
             characteristicCommunicationListener.onCharacteristicCommunicationMassage(notifiedData, CHARACTERISTIC_NOTIFICATION);
         }

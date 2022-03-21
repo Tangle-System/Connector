@@ -857,7 +857,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void goHome() {
             Log.d(TAG, "goHome: ");
-            webView.loadUrl(homeWebUrl);
+            runOnUiThread(() -> webView.loadUrl(homeWebUrl));
         }
 
         /**
@@ -867,6 +867,7 @@ public class ActivityControl extends AppCompatActivity {
          **/
         @JavascriptInterface
         public void hideHomeButton(boolean hide) {
+            Log.d(TAG, "hideHomeButton: " + hide);
             hideHomeButton = hide;
         }
 
