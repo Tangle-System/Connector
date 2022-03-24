@@ -73,16 +73,19 @@ public class ActivityControl extends AppCompatActivity {
     private boolean disableBackButton;
     private boolean fullScreenMode;
     private boolean hideHomeButton = false;
+    private boolean orientationAdjustable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
         layoutActivityControl = findViewById(R.id.layout_activity_control);
-        setConnectorSpecifications();
 
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
         webURL = mSharedPref.getString("webURL", homeWebUrl);
+        orientationAdjustable = mSharedPref.getBoolean("orientationAdjustable", true);
+
+        setConnectorSpecifications();
 
         if (permissionAccessFineLocationGuaranteed()) {
             if (permissionBluetoothConnectGuaranteed()) {
@@ -115,7 +118,11 @@ public class ActivityControl extends AppCompatActivity {
         }
 
         // Set screen orientation of ActivityControl
-        this.setRequestedOrientation(intent.getIntExtra("screenOrientation", ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
+        if(orientationAdjustable){
+            this.setRequestedOrientation(intent.getIntExtra("screenOrientation", ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
+        } else{
+            orientationAdjustable = true;
+        }
     }
 
     private boolean permissionAccessFineLocationGuaranteed() {
@@ -566,6 +573,7 @@ public class ActivityControl extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         mSharedPref.edit().putString("webURL", webView.getUrl()).apply();
+        mSharedPref.edit().putBoolean("orientationAdjustable", orientationAdjustable).apply();
     }
 
     @Override
@@ -848,6 +856,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void setRotation(int requestedOrientation) {
             Log.d(TAG, "setRotation: " + requestedOrientation);
+            orientationAdjustable = false;
             ActivityControl.this.setRequestedOrientation(requestedOrientation);
         }
 
@@ -869,6 +878,11 @@ public class ActivityControl extends AppCompatActivity {
         public void hideHomeButton(boolean hide) {
             Log.d(TAG, "hideHomeButton: " + hide);
             hideHomeButton = hide;
+        }
+
+        @JavascriptInterface
+        public void ping(){
+            sendResolve();
         }
 
     }
