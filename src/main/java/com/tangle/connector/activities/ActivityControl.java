@@ -82,10 +82,10 @@ public class ActivityControl extends AppCompatActivity {
         layoutActivityControl = findViewById(R.id.layout_activity_control);
 
         mSharedPref = getSharedPreferences("webURL", MODE_PRIVATE);
-        webURL = mSharedPref.getString("webURL", homeWebUrl);
         orientationAdjustable = mSharedPref.getBoolean("orientationAdjustable", true);
 
         setConnectorSpecifications();
+
 
         if (permissionAccessFineLocationGuaranteed()) {
             if (permissionBluetoothConnectGuaranteed()) {
@@ -101,6 +101,7 @@ public class ActivityControl extends AppCompatActivity {
 
         // Set default webUrl for webView
         homeWebUrl = intent.getStringExtra("homeWebUrl");
+        webURL = mSharedPref.getString("webURL", homeWebUrl);
 
         // Set appUpdater and his url for checking new versions of application
         if (intent.getStringExtra("updaterUrl") != null) {
@@ -882,6 +883,7 @@ public class ActivityControl extends AppCompatActivity {
 
         @JavascriptInterface
         public void ping(){
+            Log.d(TAG, "ping: ");
             sendResolve();
         }
 
