@@ -39,8 +39,8 @@ import com.google.gson.Gson;
 import com.spectoda.connector.BleScanner;
 import com.spectoda.connector.Functions;
 import com.spectoda.connector.R;
-import com.spectoda.connector.TangleBluetoothServices;
-import com.spectoda.connector.TangleParameters;
+import com.spectoda.connector.SpectodaBluetoothServices;
+import com.spectoda.connector.SpectodaParameters;
 
 public class ActivityControl extends AppCompatActivity {
 
@@ -55,7 +55,7 @@ public class ActivityControl extends AppCompatActivity {
     private FloatingActionButton buttonHome;
     private ConstraintLayout layoutActivityControl;
 
-    private TangleBluetoothServices connector;
+    private SpectodaBluetoothServices connector;
     private BroadcastReceiver broadcastReceiver;
     private SharedPreferences mSharedPref;
 
@@ -285,10 +285,10 @@ public class ActivityControl extends AppCompatActivity {
                 switch (intent.getAction()) {
                     case USER_SELECT_RESOLVE:
                         macAddress = intent.getStringExtra("macAddress");
-                        connector = new TangleBluetoothServices(macAddress, getApplicationContext());
-                        TangleParameters tangleParameters = intent.getParcelableExtra("tangleParameters");
+                        connector = new SpectodaBluetoothServices(macAddress, getApplicationContext());
+                        SpectodaParameters spectodaParameters = intent.getParcelableExtra("tangleParameters");
                         Gson gson = new Gson();
-                        tangleParametersJson = gson.toJson(tangleParameters);
+                        tangleParametersJson = gson.toJson(spectodaParameters);
                         sendResolve(tangleParametersJson);
                         break;
                     case USER_SELECT_CANCELED_SELECTION:
@@ -309,7 +309,7 @@ public class ActivityControl extends AppCompatActivity {
     private void setConnectorServices() {
         connector.setChangeStateListener(connectionState -> runOnUiThread(() -> {
             switch (connectionState) {
-                case TangleBluetoothServices.STATE_DISCONNECTED:
+                case SpectodaBluetoothServices.STATE_DISCONNECTED:
                     Log.d(TAG, "bluetoothService: Disconnected");
                     if (connecting) { // App state connecting
                         sendReject("ConnectionFailed");
@@ -322,7 +322,7 @@ public class ActivityControl extends AppCompatActivity {
                         webView.loadUrl("javascript:window.tangleConnect.emit('#disconnected');");
                     }
                     break;
-                case TangleBluetoothServices.STATE_CONNECTED:
+                case SpectodaBluetoothServices.STATE_CONNECTED:
                     Log.d(TAG, "bluetoothService: Connected");
                     webView.loadUrl("javascript:window.tangleConnect.emit('#connected');");
                     if (connecting) {
@@ -344,45 +344,45 @@ public class ActivityControl extends AppCompatActivity {
 
         connector.setCharacteristicCommunicationListener((bytes, communicationType) -> {
             switch (communicationType) {
-                case TangleBluetoothServices.CLOCK_READ_RESOLVE:
-                case TangleBluetoothServices.REQUEST_READ_RESOLVE:
+                case SpectodaBluetoothServices.CLOCK_READ_RESOLVE:
+                case SpectodaBluetoothServices.REQUEST_READ_RESOLVE:
                     sendResolve(bytes);
                     break;
-                case TangleBluetoothServices.REQUEST_WROTE_RESOLVE:
+                case SpectodaBluetoothServices.REQUEST_WROTE_RESOLVE:
                     if (!readResponse) {
                         sendResolve();
                     }
                     break;
-                case TangleBluetoothServices.CLOCK_WROTE_RESOLVE:
-                case TangleBluetoothServices.DELIVER_WROTE_RESOLVE:
-                case TangleBluetoothServices.TRANSMIT_WROTE_RESOLVE:
+                case SpectodaBluetoothServices.CLOCK_WROTE_RESOLVE:
+                case SpectodaBluetoothServices.DELIVER_WROTE_RESOLVE:
+                case SpectodaBluetoothServices.TRANSMIT_WROTE_RESOLVE:
                     sendResolve();
                     break;
-                case TangleBluetoothServices.CLOCK_READ_REJECT:
+                case SpectodaBluetoothServices.CLOCK_READ_REJECT:
                     sendReject("ClockReadFailed");
                     break;
-                case TangleBluetoothServices.CLOCK_WROTE_REJECT:
+                case SpectodaBluetoothServices.CLOCK_WROTE_REJECT:
                     sendReject("ClockWriteFailed");
                     break;
-                case TangleBluetoothServices.REQUEST_READ_REJECT:
-                case TangleBluetoothServices.REQUEST_WROTE_REJECT:
+                case SpectodaBluetoothServices.REQUEST_READ_REJECT:
+                case SpectodaBluetoothServices.REQUEST_WROTE_REJECT:
                     sendReject("RequestFailed");
                     break;
-                case TangleBluetoothServices.DELIVER_WROTE_REJECT:
+                case SpectodaBluetoothServices.DELIVER_WROTE_REJECT:
                     sendReject("DeliverFailed");
                     break;
-                case TangleBluetoothServices.TRANSMIT_WROTE_REJECT:
+                case SpectodaBluetoothServices.TRANSMIT_WROTE_REJECT:
                     sendReject("TransmitFailed");
                     break;
-                case TangleBluetoothServices.UPDATE_FIRMWARE_RESOLVE:
+                case SpectodaBluetoothServices.UPDATE_FIRMWARE_RESOLVE:
                     runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'success');"));
                     sendResolve();
                     break;
-                case TangleBluetoothServices.UPDATE_FIRMWARE_REJECT:
+                case SpectodaBluetoothServices.UPDATE_FIRMWARE_REJECT:
                     runOnUiThread(() -> webView.loadUrl("javascript:window.tangleConnect.emit('ota_status', 'fail');"));
                     sendReject("UpdateFailed");
                     break;
-                case TangleBluetoothServices.CHARACTERISTIC_NOTIFICATION:
+                case SpectodaBluetoothServices.CHARACTERISTIC_NOTIFICATION:
                     runOnUiThread(()-> webView.loadUrl("javascript:window.tangleConnect.emit('#bytecode', "+ Functions.logBytes(bytes) +");"));
             }
         });
@@ -391,16 +391,16 @@ public class ActivityControl extends AppCompatActivity {
     private void autoSelectResolve(ScanResult nearestDevice) {
         if (nearestDevice != null) {
             //Set name
-            TangleParameters nearestTangleParameters = new TangleParameters();
-            nearestTangleParameters.setName(nearestDevice.getScanRecord().getDeviceName());
+            SpectodaParameters nearestSpectodaParameters = new SpectodaParameters();
+            nearestSpectodaParameters.setName(nearestDevice.getScanRecord().getDeviceName());
 
             //Get manufactureData
-            nearestTangleParameters.parseManufactureData(nearestDevice.getScanRecord().getManufacturerSpecificData(0x02e5));
+            nearestSpectodaParameters.parseManufactureData(nearestDevice.getScanRecord().getManufacturerSpecificData(0x02e5));
 
             Gson gson = new Gson();
             macAddress = nearestDevice.getDevice().getAddress();
-            tangleParametersJson = gson.toJson(nearestTangleParameters);
-            connector = new TangleBluetoothServices(macAddress, getApplicationContext());
+            tangleParametersJson = gson.toJson(nearestSpectodaParameters);
+            connector = new SpectodaBluetoothServices(macAddress, getApplicationContext());
             sendResolve(tangleParametersJson);
         } else {
             sendReject("SelectionFailed");
@@ -608,7 +608,7 @@ public class ActivityControl extends AppCompatActivity {
         public void userSelect(String criteria) {
             Log.d(TAG, "userSelect: " + criteria);
             if (connector != null) {
-                if (connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+                if (connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                     connector.disconnect();
                 }
             }
@@ -626,7 +626,7 @@ public class ActivityControl extends AppCompatActivity {
         public void userSelect(String criteria, int timeout) {
             Log.d(TAG, "userSelect: " + criteria);
             if (connector != null) {
-                if (connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+                if (connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                     connector.disconnect();
                 }
             }
@@ -720,7 +720,7 @@ public class ActivityControl extends AppCompatActivity {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if (connector.getConnectionState() == TangleBluetoothServices.STATE_DISCONNECTED) {
+                if (connector.getConnectionState() == SpectodaBluetoothServices.STATE_DISCONNECTED) {
                     connector.disconnect();
                     sendReject("ConnectionFailed");
                 }
@@ -730,7 +730,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void disconnect() {
             Log.d(TAG, "disconnect: ");
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 disconnecting = true;
                 connector.disconnect();
             } else {
@@ -741,7 +741,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void connected() {
             Log.d(TAG, "connected: ");
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 sendResolve(tangleParametersJson);
             } else {
                 sendResolveNull();
@@ -756,7 +756,7 @@ public class ActivityControl extends AppCompatActivity {
             }
 
             Log.d(TAG, "deliver: " + Functions.logBytes(command_payload));
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 connector.deliver(command_payload);
             } else {
                 sendReject("DeviceDisconnected");
@@ -770,7 +770,7 @@ public class ActivityControl extends AppCompatActivity {
                 return;
             }
             Log.d(TAG, "transmit: " + Functions.logBytes(command_payload));
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 connector.transmit(command_payload);
             } else {
                 sendReject("DeviceDisconnected");
@@ -786,7 +786,7 @@ public class ActivityControl extends AppCompatActivity {
             Log.d(TAG, "request: " + Functions.logBytes(command_payload) + ", readResponse: " + read_response);
 
             readResponse = read_response;
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 connector.request(command_payload, read_response);
             } else {
                 sendReject("DeviceDisconnected");
@@ -801,7 +801,7 @@ public class ActivityControl extends AppCompatActivity {
             }
 
             Log.d(TAG, "writeClock: " + Functions.logBytes(timeStamp));
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 connector.setClock(timeStamp);
             } else {
                 sendReject("DeviceDisconnected");
@@ -812,7 +812,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void readClock() {
             Log.d(TAG, "readClock: ");
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 connector.getClock();
             } else {
                 sendReject("DeviceDisconnected");
@@ -822,7 +822,7 @@ public class ActivityControl extends AppCompatActivity {
         @JavascriptInterface
         public void updateFW(byte[] firmware) {
             Log.d(TAG, "updateFirmware: ");
-            if (connector != null && connector.getConnectionState() == TangleBluetoothServices.STATE_CONNECTED) {
+            if (connector != null && connector.getConnectionState() == SpectodaBluetoothServices.STATE_CONNECTED) {
                 if (firmware != null) {
                     connector.updateFirmware(firmware);
                 } else {

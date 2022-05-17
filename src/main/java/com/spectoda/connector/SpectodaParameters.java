@@ -13,8 +13,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TangleParameters implements Parcelable {
-    private final String TAG = TangleParameters.class.getName();
+public class SpectodaParameters implements Parcelable {
+    private final String TAG = SpectodaParameters.class.getName();
 
     private String name = "";
     private String namePrefix = "";
@@ -30,10 +30,10 @@ public class TangleParameters implements Parcelable {
 
     private ScanFilter.Builder scanFilterBuilder;
 
-    public TangleParameters() {
+    public SpectodaParameters() {
     }
 
-    protected TangleParameters(Parcel in) {
+    protected SpectodaParameters(Parcel in) {
         name = in.readString();
         namePrefix = in.readString();
         ownerSignature = in.readString();
@@ -109,15 +109,15 @@ public class TangleParameters implements Parcelable {
         dest.writeByte((byte) (legacy ? 1 : 0));
     }
 
-    public static final Creator<TangleParameters> CREATOR = new Creator<>() {
+    public static final Creator<SpectodaParameters> CREATOR = new Creator<>() {
         @Override
-        public TangleParameters createFromParcel(Parcel in) {
-            return new TangleParameters(in);
+        public SpectodaParameters createFromParcel(Parcel in) {
+            return new SpectodaParameters(in);
         }
 
         @Override
-        public TangleParameters[] newArray(int size) {
-            return new TangleParameters[size];
+        public SpectodaParameters[] newArray(int size) {
+            return new SpectodaParameters[size];
         }
     };
 

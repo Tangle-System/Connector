@@ -36,8 +36,8 @@ import com.airbnb.lottie.LottieDrawable;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.spectoda.connector.R;
-import com.spectoda.connector.TangleBluetoothServices;
-import com.spectoda.connector.TangleParameters;
+import com.spectoda.connector.SpectodaBluetoothServices;
+import com.spectoda.connector.SpectodaParameters;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class ActivityUserSelect extends AppCompatActivity {
     private BluetoothLeScanner bluetoothLeScanner;
     private ScanSettings.Builder settingsBuilder;
     private ArrayList<ScanFilter> filters;
-    private TangleParameters tangleParameters;
+    private SpectodaParameters spectodaParameters;
     private PairedDeviceAdapter mAdapter;
     private final ArrayList<ScanResult> pairedDeviceList = new ArrayList<>();
     private final Handler handler = new Handler();
@@ -104,15 +104,15 @@ public class ActivityUserSelect extends AppCompatActivity {
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
             ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
-            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleBluetoothServices.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(SpectodaBluetoothServices.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
             filters.add(scanFilterBuilder.build());
         } else {
             Gson gson = new Gson();
-            Type type1 = new TypeToken<TangleParameters[]>() {
+            Type type1 = new TypeToken<SpectodaParameters[]>() {
             }.getType();
-            TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
+            SpectodaParameters[] criteria = gson.fromJson(criteriaJson, type1);
 
-            for (TangleParameters criterion : criteria) {
+            for (SpectodaParameters criterion : criteria) {
                 if (!criterion.isLegacy()) {
                     criterion.getManufactureDataFilters(filters);
                 }
@@ -176,16 +176,16 @@ public class ActivityUserSelect extends AppCompatActivity {
             ScanResult device = mAdapter.getItem(position);
 
             //Set name
-            TangleParameters selectedTangleParameters = new TangleParameters();
-            selectedTangleParameters.setName(device.getScanRecord().getDeviceName());
+            SpectodaParameters selectedSpectodaParameters = new SpectodaParameters();
+            selectedSpectodaParameters.setName(device.getScanRecord().getDeviceName());
 
             //Get manufactureData
-            selectedTangleParameters.parseManufactureData(device.getScanRecord().getManufacturerSpecificData(MANUFACTURE_ID));
+            selectedSpectodaParameters.parseManufactureData(device.getScanRecord().getManufacturerSpecificData(MANUFACTURE_ID));
 
             //Send intend and finis
             Intent intent = new Intent(getApplicationContext(), ActivityControl.class);
             intent.putExtra("macAddress", device.getDevice().getAddress().toString());
-            intent.putExtra("tangleParameters", (Parcelable) selectedTangleParameters);
+            intent.putExtra("tangleParameters", (Parcelable) selectedSpectodaParameters);
             intent.setAction(ActivityControl.USER_SELECT_RESOLVE);
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
@@ -228,6 +228,7 @@ public class ActivityUserSelect extends AppCompatActivity {
             mTextView.setText(R.string.looking_for_devices);
             getImageViewBleScanMain.setAnimation(R.raw.ble_scan_animation);
             getImageViewBleScanMain.setRepeatCount(LottieDrawable.INFINITE);
+            getImageViewBleScanMain.setSpeed(0F);
             getImageViewBleScanMain.playAnimation();
             informationText.setVisibility(View.GONE);
             buttonScanAgain.setVisibility(View.GONE);

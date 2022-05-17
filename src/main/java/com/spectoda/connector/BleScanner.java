@@ -41,15 +41,15 @@ public class BleScanner {
 
         if (criteriaJson.equals("[]") || criteriaJson.equals("")) {
             ScanFilter.Builder scanFilterBuilder = new ScanFilter.Builder();
-            scanFilterBuilder.setServiceUuid(new ParcelUuid(TangleBluetoothServices.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+            scanFilterBuilder.setServiceUuid(new ParcelUuid(SpectodaBluetoothServices.TANGLE_SERVICE_UUID), ParcelUuid.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
             filters.add(scanFilterBuilder.build());
         } else {
             Gson gson = new Gson();
-            Type type1 = new TypeToken<TangleParameters[]>() {
+            Type type1 = new TypeToken<SpectodaParameters[]>() {
             }.getType();
-            TangleParameters[] criteria = gson.fromJson(criteriaJson, type1);
+            SpectodaParameters[] criteria = gson.fromJson(criteriaJson, type1);
 
-            for (TangleParameters criterion : criteria) {
+            for (SpectodaParameters criterion : criteria) {
                 if (!criterion.isLegacy()) {
                     criterion.getManufactureDataFilters(filters);
                 }
