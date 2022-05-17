@@ -1,4 +1,4 @@
-package com.tangle.connector;
+package com.spectoda.connector;
 
 import android.bluetooth.le.ScanFilter;
 import android.os.Parcel;

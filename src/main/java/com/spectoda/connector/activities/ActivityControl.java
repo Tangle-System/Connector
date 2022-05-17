@@ -1,4 +1,4 @@
-package com.tangle.connector.activities;
+package com.spectoda.connector.activities;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,13 +36,11 @@ import com.github.javiersantos.appupdater.enums.UpdateFrom;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
-import com.tangle.connector.BleScanner;
-import com.tangle.connector.Functions;
-import com.tangle.connector.R;
-import com.tangle.connector.TangleBluetoothServices;
-import com.tangle.connector.TangleParameters;
-
-import java.util.Arrays;
+import com.spectoda.connector.BleScanner;
+import com.spectoda.connector.Functions;
+import com.spectoda.connector.R;
+import com.spectoda.connector.TangleBluetoothServices;
+import com.spectoda.connector.TangleParameters;
 
 public class ActivityControl extends AppCompatActivity {
 

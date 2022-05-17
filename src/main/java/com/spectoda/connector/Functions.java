@@ -1,14 +1,11 @@
-package com.tangle.connector;
+package com.spectoda.connector;
 
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.database.DatabaseErrorHandler;
 
-import androidx.activity.result.contract.ActivityResultContracts;
-
-import com.tangle.connector.activities.ActivityControl;
+import com.spectoda.connector.activities.ActivityControl;
 
 import java.util.ArrayList;
 import java.util.Date;

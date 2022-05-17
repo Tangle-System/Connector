@@ -1,4 +1,4 @@
-package com.tangle.connector.activities;
+package com.spectoda.connector.activities;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -35,9 +35,9 @@ import com.airbnb.lottie.LottieAnimationView;
 import com.airbnb.lottie.LottieDrawable;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.tangle.connector.R;
-import com.tangle.connector.TangleBluetoothServices;
-import com.tangle.connector.TangleParameters;
+import com.spectoda.connector.R;
+import com.spectoda.connector.TangleBluetoothServices;
+import com.spectoda.connector.TangleParameters;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;

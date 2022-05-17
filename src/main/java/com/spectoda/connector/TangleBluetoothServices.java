@@ -1,4 +1,4 @@
-package com.tangle.connector;
+package com.spectoda.connector;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;

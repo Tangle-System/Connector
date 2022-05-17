@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="?colorPrimary"
     android:orientation="vertical"
-    tools:context="com.tangle.connector.activities.ActivityControl">
+    tools:context=".activities.ActivityControl">
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/imageView_ble_scan_mainImage"
