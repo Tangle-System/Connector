@@ -26,6 +26,7 @@
         android:backgroundTint="?attr/colorSecondaryVariant"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:borderWidth="0dp"
         app:srcCompat="@drawable/ic_baseline_home_24" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
